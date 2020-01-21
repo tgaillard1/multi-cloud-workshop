@@ -4,6 +4,7 @@
 ### Reference Implementation main document --> go/...
 ******************************************************************
 
+![Workshop Screenshot](images/multi-cloud-workshop.png?raw=true "Workshop Diagram")
 
 ******************************************************
 Enable API's
