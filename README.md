@@ -189,11 +189,11 @@ Here you'll create your own copy of the `gceme` sample app in [Cloud Source Repo
    **Be sure to replace _REPLACE_WITH_YOUR_PROJECT_ID_ with the name of your Google Cloud Platform project**
 
     ```shell
-cd sample-app
-    git init
-    git config credential.helper gcloud.sh
-    gcloud source repos create gceme
-    git remote add origin https://source.developers.google.com/p/REPLACE_WITH_YOUR_PROJECT_ID/r/gceme
+    $ cd sample-app
+    $ git init
+    $ git config credential.helper gcloud.sh
+    $ gcloud source repos create gceme
+    $ git remote add origin https://source.developers.google.com/p/REPLACE_WITH_YOUR_PROJECT_ID/r/gceme
     ```
 
 1. Ensure git is able to identify you:
