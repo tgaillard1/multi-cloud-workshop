@@ -580,33 +580,10 @@ Update the Spinnaker helm release:
 ```
 ${HELM_PATH}/helm upgrade spin stable/spinnaker -f spinnaker-config.yaml --timeout 600 --version 1.8.1 --wait
 ```
-************************
-************************
-************************
 
 Validate deployments
+----------------
 
-************************
-************************
-************************
-
-************************ Reset Variables if not in one deployment -- Make sure Pub/Sub was not deleted ************************
-
-gcloud config set project tgproject1-221717
-cd $HOME/spinnaker
-WORKDIR=$(pwd)
-chmod +x spin
-export PATH=$PATH:$WORKDIR/kubectx
-export PROJECT_ID=$(gcloud info --format='value(config.project)')
-${HELM_PATH}/helm version
-HELM_VERSION=v2.13.0
-HELM_PATH="$WORKDIR"/helm-"$HELM_VERSION"
-${HELM_PATH}/helm version
-export SA_JSON=$(cat $WORKDIR/spinnaker-service-account.json)
-export PROJECT_ID=$(gcloud info --format='value(config.project)')
-export BUCKET=${PROJECT_ID}-spinnaker-config
-
-************************ Reset Variables if not in one deployment ************************
 
 
 ```
