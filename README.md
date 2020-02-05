@@ -42,7 +42,7 @@ kubectl get pods
 You should see "No resources found"
 ```
 
-# Install Helm
+### Install Helm
 
 In this lab, you will use Helm to install Jenkins from the Charts repository. Helm is a package manager that makes it easy to configure and deploy Kubernetes applications.  Once you have Jenkins installed, you'll be able to set up your CI/CD pipleline.
 
