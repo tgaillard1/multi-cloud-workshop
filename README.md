@@ -1,4 +1,4 @@
-#   Multi-Cloud Workshop  
+#   Multi-Cloud Workshop -- NOTE -- Work in progress -- Not complete 
 ### Reference Implementation main document --> go/...
 
 ![Workshop Screenshot](images/multi-cloud-workshop.png?raw=true "Workshop Diagram")
