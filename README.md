@@ -21,7 +21,7 @@ cd multi-cloud-workshop/
 
 ******************************************************
 ## Workshop 1 -- CI Jenkins
-******************************************************
+
 
 Create kubernetes Cluster for CI/CD
 ```
@@ -42,7 +42,9 @@ kubectl get pods
 You should see "No resources found"
 ```
 
+
 ### Install Helm
+------
 
 In this lab, you will use Helm to install Jenkins from the Charts repository. Helm is a package manager that makes it easy to configure and deploy Kubernetes applications.  Once you have Jenkins installed, you'll be able to set up your CI/CD pipleline.
 
@@ -87,7 +89,8 @@ In this lab, you will use Helm to install Jenkins from the Charts repository. He
     Server: &version.Version{SemVer:"v2.14.1", GitCommit:"5270352a09c7e8b6e8c9593002a73535276507c0", GitTreeState:"clean"}
     ```
 
-## Configure and Install Jenkins
+
+### Configure and Install Jenkins
 You will use a custom [values file](https://github.com/kubernetes/helm/blob/master/docs/chart_template_guide/values_files.md) to add the GCP specific plugin necessary to use service account credentials to reach your Cloud Source Repository.
 
 1. Use the Helm CLI to deploy the chart with your configuration set.
@@ -219,9 +222,10 @@ Here you'll create your own copy of the `gceme` sample app in [Cloud Source Repo
 
 ******************************************************
 ## Workshop 2 -- CD Spinnaker
-******************************************************
+
 
 ## Prerequisites
+------
 1. A Google Cloud Platform Account
 1. [Enable the Cloud Build and Cloud Source Repositories APIs](https://console.cloud.google.com/flows/enableapi?apiid=container,cloudbuild.googleapis.com,sourcerepo.googleapis.com&redirect=https://console.cloud.google.com&_ga=2.48886959.843635228.1580750081-768538728.1545413763)
 
@@ -238,7 +242,8 @@ cd $HOME/spinnaker
 WORKDIR=$(pwd)
 ```
 
-Install Helm -- * NOTE --- Skip this step if you have already completed it in Workshop 1 *
+# Install Helm -- **NOTE --- Skip this step if you have already completed it in Workshop 1**
+------
 ```
 HELM_VERSION=v2.13.0
 HELM_PATH="$WORKDIR"/helm-"$HELM_VERSION"
