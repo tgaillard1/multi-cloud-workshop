@@ -20,7 +20,8 @@ cd multi-cloud-workshop/
 ```
 
 ******************************************************
-## Workshop 1 -- CI Jenkins
+## Workshop 1 -- CI Jenkins 
+------------
 
 
 Create kubernetes Cluster for CI/CD
@@ -224,7 +225,7 @@ Here you'll create your own copy of the `gceme` sample app in [Cloud Source Repo
 ## Workshop 2 -- CD Spinnaker
 
 
-## Prerequisites
+### Prerequisites
 ------
 1. A Google Cloud Platform Account
 1. [Enable the Cloud Build and Cloud Source Repositories APIs](https://console.cloud.google.com/flows/enableapi?apiid=container,cloudbuild.googleapis.com,sourcerepo.googleapis.com&redirect=https://console.cloud.google.com&_ga=2.48886959.843635228.1580750081-768538728.1545413763)
@@ -242,7 +243,7 @@ cd $HOME/spinnaker
 WORKDIR=$(pwd)
 ```
 
-# Install Helm -- **NOTE --- Skip this step if you have already completed it in Workshop 1**
+### Install Helm -- **NOTE --- Skip this step if you have already completed it in Workshop 1**
 ------
 ```
 HELM_VERSION=v2.13.0
