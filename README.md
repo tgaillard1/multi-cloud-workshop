@@ -31,6 +31,7 @@ cd continuous-integration-on-kubernetes
 
 gcloud container clusters create jenkins-ci \
 --num-nodes 2 \
+--zone us-central1-a \
 --machine-type n1-standard-2 \
 --scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform" \
 --cluster-version 1.13
@@ -617,7 +618,7 @@ Make the initial commit to your source code repository:
 ```
 git init
 git add .
-git commit -m "Initial commit"
+git commit -m "Initial commit-1-5-20"
 ```
 
 Create a repository to host your code:
@@ -714,7 +715,7 @@ Create a tag and push the image to Cloud Source Repositories to trigger the Spin
 
 ```
 cd $WORKDIR/sample-app
-git tag v1.5.1
+git tag v1.0.4
 git push --tags
 ```
 
@@ -798,3 +799,87 @@ Delete the WORKDIR folder:
 cd ~
 rm -rf $WORKDIR
 ```
+
+
+Changes -- 
+
+Add changing the contect for jenkins cluster
+
+kubectx ci-cluster=gke_gaillard-gcp_us-central1-a_jenkins-ci
+---- gke_${PROJECT_ID}_us-central1-a_jenkins-ci  ---
+
+Apply Role to ci-cluster
+kubectl --context east apply -f spinnaker-sa.yaml
+
+CI_CLUSTER=gke_gaillard-gcp_us-central1-a_jenkins-ci
+--- CI_CLUSTER=gke_${PROJECT_ID}_us-west2-b_west --- 
+
+CI_USER=ci-spinnaker-service-account
+
+
+CI_TOKEN=$(kubectl --context ci-cluster get secret \
+    $(kubectl get serviceaccount spinnaker-service-account \
+    --context ci-cluster \
+    -n spinnaker \
+    -o jsonpath='{.secrets[0].name}') \
+    -n spinnaker \
+    -o jsonpath='{.data.token}' | base64 --decode)
+
+kubectl config view --raw -o json | jq -r '.clusters[] | select(.name == "'$CI_CLUSTER'") | .cluster."certificate-authority-data"' | base64 -d > ci_cluster_ca.crt
+
+CI_SERVER=$(kubectl config view --raw -o json | jq -r '.clusters[] | select(.name == "'$CI_CLUSTER'") | .cluster."server"')
+
+KUBECONFIG_FILE=spinnaker-kubeconfig
+
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-cluster $WEST_CLUSTER \
+    --certificate-authority=$WORKDIR/west_cluster_ca.crt \
+    --embed-certs=true \
+    --server $WEST_SERVER
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-credentials $WEST_USER --token $WEST_TOKEN
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-context west --user $WEST_USER --cluster $WEST_CLUSTER
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-cluster $EAST_CLUSTER \
+    --certificate-authority=$WORKDIR/east_cluster_ca.crt \
+    --embed-certs=true \
+    --server $EAST_SERVER
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-credentials $EAST_USER --token $EAST_TOKEN
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-context east --user $EAST_USER --cluster $EAST_CLUSTER
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-cluster $CI_CLUSTER \
+    --certificate-authority=$WORKDIR/ci_cluster_ca.crt \
+    --embed-certs=true \
+    --server $CI_SERVER
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-credentials $CI_USER --token $CI_TOKEN
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-context ci-cluster --user $CI_USER --cluster $CI_CLUSTER
+
+cat >> spinnaker-config.yaml <<EOF
+kubeConfig:
+  enabled: true
+  secretName: spin-kubeconfig
+  secretKey: spinnaker-kubeconfig
+  contexts:
+  - east
+  - west
+  - ci-jenkins
+EOF
+
+
+******************************************************
+## Workshop 3 -- Anthos
+
+
+******************************************************
+## Workshop 4 -- AI/ML Recommendations for info_card
+
+### Prerequisites
+------
+1. A Google Cloud Platform Account
+1. [Enable the Cloud Build and Cloud Source Repositories APIs](https://console.cloud.google.com/flows/enableapi?apiid=container,cloudbuild.googleapis.com,sourcerepo.googleapis.com&redirect=https://console.cloud.google.com&_ga=2.48886959.843635228.1580750081-768538728.1545413763)
+
+Set Project and Zone
+```
+gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID 
+gcloud config set compute/zone YOUR_ZONE
+```
+
+
+
+
