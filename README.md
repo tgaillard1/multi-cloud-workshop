@@ -114,6 +114,7 @@ You will use a custom [values file](https://github.com/kubernetes/helm/blob/mast
 
     ```shell
     $ kubectl create clusterrolebinding jenkins-deploy --clusterrole=cluster-admin --serviceaccount=default:cd-jenkins
+
     clusterrolebinding.rbac.authorization.k8s.io/jenkins-deploy created
     ```
 
@@ -220,6 +221,9 @@ Here you'll create your own copy of the `gceme` sample app in [Cloud Source Repo
     $ git commit -m "Initial commit"
     $ git push origin master
     ```
+
+Go to --> https://source.cloud.google.com/REPLACE_WITH_YOUR_PROJECT_ID/gceme
+
 
 ### Create GIT OPTION ----  repository for the sample app source
 
@@ -880,6 +884,8 @@ gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID
 gcloud config set compute/zone YOUR_ZONE
 ```
 
+export BUILD_PROJECT_ID=$DEVSHELL_PROJECT_ID
+export TEST_PROJECT_ID=PROJECT-ID
 
-
-
+gcloud config set compute/zone us-central1-a --project $BUILD_PROJECT_ID
+gcloud config set compute/zone us-us-east4-a --project $TEST_PROJECT_ID
