@@ -889,3 +889,33 @@ export TEST_PROJECT_ID=PROJECT-ID
 
 gcloud config set compute/zone us-central1-a --project $BUILD_PROJECT_ID
 gcloud config set compute/zone us-us-east4-a --project $TEST_PROJECT_ID
+
+gcloud config set project $BUILD_PROJECT_ID
+
+export BUILD_PROJECT_NUMBER=$(gcloud projects describe $DEVSHELL_PROJECT_ID --format='value(projectNumber)')
+
+gsutil mb -p ${BUILD_PROJECT_ID} -l us-central1 \
+ gs://recommender-tf-state-$BUILD_PROJECT_ID
+
+Create a GitHub repository
+
+cp -r recommender-iac-pipeline-nodejs-tutorial/sample-iac $HOME
+cd $HOME/sample-iac
+git init
+git remote add origin
+https://github.com/GITHUB-ACCOUNT/IAC-REPO-NAME
+
+sed -i "s|__PROJECT_ID__|${TEST_PROJECT_ID}|g" ./terraform.tfvars
+
+sed -i "s|__STATE_BUCKET_NAME__|recommender-tf-state-$BUILD_PROJECT_ID|g" ./backend.tf
+
+git add .
+git commit -m "First Commit"
+git push origin master
+
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+
+
+
+
+
