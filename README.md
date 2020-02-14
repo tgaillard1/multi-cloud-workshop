@@ -915,7 +915,97 @@ git push origin master
 
 ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
 
+cat SSH-KEYS-DIR/id_rsa.pub
+
+ssh-keyscan github.com >> ~/.ssh/known_hosts
 
 
+gsutil mb -p ${BUILD_PROJECT_ID} -l us-central1 gs://github-keys-$BUILD_PROJECT_ID
+
+gsutil cp SSH-KEYS-DIR/id_rsa* gs://github-keys-$BUILD_PROJECT_ID
+gsutil cp SSH-KEYS-DIR/known_hosts gs://github-keys-$BUILD_PROJECT_ID
+
+export GITHUB_PAT=<personal-access-token-you-copied>
 
 
+cd ~/multi-cloud-workshop/recommender-iac-pipeline-nodejs-tutorial/parser-service
+
+gcloud config set run/region us-central1
+
+sed -i "s|__PROJECT_ID__|${TEST_PROJECT_ID}|g" ./stub/iam.json
+sed -i "s|__PROJECT_ID__|${TEST_PROJECT_ID}|g" ./stub/vm.json
+
+export IMAGE=gcr.io/$BUILD_PROJECT_ID/recommender-parser:2.0
+
+gcloud builds submit --tag $IMAGE .
+
+gcloud beta iam service-accounts create recommender-parser-sa \
+  --description "Service account that the recommender-parser service uses to invoke other GCP services" \
+  --display-name "recommender-parser-sa" \
+  --project $BUILD_PROJECT_ID
+
+gsutil iam ch serviceAccount:recommender-parser-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com:objectCreator,objectViewer \
+gs://github-keys-$BUILD_PROJECT_ID
+
+gsutil iam ch serviceAccount:recommender-parser-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com:objectCreator,objectViewer \
+gs://recommender-tf-state-$BUILD_PROJECT_ID  
+
+Give the recommender-parser service's service account access to Firestore and the Recommender API.
+
+gcloud projects add-iam-policy-binding $BUILD_PROJECT_ID \
+  --member serviceAccount:recommender-parser-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com \
+  --role roles/datastore.user
+
+gcloud projects add-iam-policy-binding $TEST_PROJECT_ID \
+  --member serviceAccount:recommender-parser-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com \
+  --role roles/recommender.iamAdmin
+
+gcloud projects add-iam-policy-binding $TEST_PROJECT_ID \
+  --member serviceAccount:recommender-parser-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com \
+  --role roles/recommender.iamViewer
+
+gcloud projects add-iam-policy-binding $TEST_PROJECT_ID \
+  --member serviceAccount:recommender-parser-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com \
+  --role roles/recommender.computeAdmin
+
+Deploy the Cloud Run service, which is called recommender-parser, by running the command. Accept any system prompts.
+
+gcloud beta run deploy \
+ --image=${IMAGE} \
+ --no-allow-unauthenticated \
+ --region us-central1 \
+ --platform managed \
+ --service-account recommender-parser-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com \
+--set-env-vars="GITHUB_ACCOUNT=github.com:GITHUB-ACCOUNT,GITHUB_PAT=${GITHUB_PAT},SSH_KEYS_BUCKET=github-keys-${BUILD_PROJECT_ID},TERRAFORM_STATE_BUCKET=recommender-tf-state-$BUILD_PROJECT_ID" \
+ --project $BUILD_PROJECT_ID \
+ recommender-parser
+
+Create Firestore
+
+
+Set up a Cloud Scheduler job
+
+gcloud beta iam service-accounts create recommender-scheduler-sa \
+  --description "Service Account used by Cloud Scheduler to invoke the recommender-parser service" \
+  --display-name "recommender-scheduler-sa" \
+  --project $BUILD_PROJECT_ID
+
+
+export RECOMMENDER_ROUTE_TO_INVOKE_IAM=RECOMMENDER-SERVICE-URL/recommendation/iam
+
+gcloud beta scheduler jobs create http recommender-iam-scheduler \
+  --project $BUILD_PROJECT_ID \
+  --time-zone "America/Los_Angeles" \
+  --schedule="0 */3 * * *" \
+  --uri=$RECOMMENDER_ROUTE_TO_INVOKE_IAM \
+  --description="Scheduler job to invoke recommendation pipeline" \
+--oidc-service-account-email="recommender-scheduler-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com" \
+  --headers="Content-Type=application/json" \
+  --http-method="POST" \
+  --message-body="{ \"repo\": \"<var>IAC-REPO-NAME</var>\", \"projects\": [\"$TEST_PROJECT_ID\"], \"stub\": true }"
+
+
+  gcloud beta iam service-accounts create recommender-ci-subscription-sa \
+  --description "Service Account used by Cloud Pub/Sub to push Cloud Build events to the recommender-parser service" \
+  --display-name "recommender-ci-subscription-sa" \
+  --project $BUILD_PROJECT_ID

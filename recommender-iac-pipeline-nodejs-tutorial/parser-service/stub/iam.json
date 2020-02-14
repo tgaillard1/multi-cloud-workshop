@@ -1,6 +1,6 @@
 [
   {
-    "name": "projects/__PROJECT_ID__/locations/global/recommenders/google.iam.policy.Recommender/recommendations/3391f5aa-6a1e-4b2e-a7c4-b2b9d50d0dae",
+    "name": "projects/gaillard-gcp/locations/global/recommenders/google.iam.policy.Recommender/recommendations/3391f5aa-6a1e-4b2e-a7c4-b2b9d50d0dae",
     "description": "Replace the current role with a smaller role to cover the permissions needed.",
     "primaryImpact": {
       "category": "SECURITY"
@@ -27,7 +27,7 @@
       "resourceChanges": {
         "iamPolicyChangeNewRole": {
           "resourceType": "cloudresourcemanager.googleapis.com/Project",
-          "resourceName": "//cloudresourcemanager.googleapis.com/projects/google.com:__PROJECT_ID__",
+          "resourceName": "//cloudresourcemanager.googleapis.com/projects/google.com:gaillard-gcp",
           "resourceChangeType": "UPDATE",
           "changeSpec": {
             "policyChange": {
@@ -35,15 +35,15 @@
                 {
                   "action": "ADD",
                   "bindingTuple": {
-                    "member": "serviceAccount:terraformtest@__PROJECT_ID__.iam.gserviceaccount.com",
-                    "role": "projects/google.com:__PROJECT_ID__/roles/viewer"
+                    "member": "serviceAccount:terraformtest@gaillard-gcp.iam.gserviceaccount.com",
+                    "role": "projects/google.com:gaillard-gcp/roles/viewer"
                   }
                 },
                 {
                   "action": "REMOVE",
                   "bindingTuple": {
-                    "member": "serviceAccount:terraformtest@__PROJECT_ID__.iam.gserviceaccount.com",
-                    "role": "projects/google.com:__PROJECT_ID__/roles/editor"
+                    "member": "serviceAccount:terraformtest@gaillard-gcp.iam.gserviceaccount.com",
+                    "role": "projects/google.com:gaillard-gcp/roles/editor"
                   }
                 }
               ]
@@ -59,23 +59,23 @@
             {
               "action": "add",
               "resourceType": "cloudresourcemanager.googleapis.com/Project",
-              "resource": "//cloudresourcemanager.googleapis.com/projects/google.com:__PROJECT_ID__",
+              "resource": "//cloudresourcemanager.googleapis.com/projects/google.com:gaillard-gcp",
               "path": "/iamPolicy/bindings/*/members/-",
-              "value": "serviceAccount:terraformtest@__PROJECT_ID__.iam.gserviceaccount.com",
+              "value": "serviceAccount:terraformtest@gaillard-gcp.iam.gserviceaccount.com",
               "pathFilters": {
                 "/iamPolicy/bindings/*/condition/expression": "",
-                "/iamPolicy/bindings/*/role": "projects/google.com:__PROJECT_ID__/roles/viewer"
+                "/iamPolicy/bindings/*/role": "projects/google.com:gaillard-gcp/roles/viewer"
               }
             },
             {
               "action": "remove",
               "resourceType": "cloudresourcemanager.googleapis.com/Project",
-              "resource": "//cloudresourcemanager.googleapis.com/projects/google.com:__PROJECT_ID__",
+              "resource": "//cloudresourcemanager.googleapis.com/projects/google.com:gaillard-gcp",
               "path": "/iamPolicy/bindings/*/members/*",
               "pathFilters": {
                 "/iamPolicy/bindings/*/condition/expression": "",
-                "/iamPolicy/bindings/*/members/*": "serviceAccount:terraformtest@__PROJECT_ID__.iam.gserviceaccount.com",
-                "/iamPolicy/bindings/*/role": "projects/google.com:__PROJECT_ID__/roles/editor"
+                "/iamPolicy/bindings/*/members/*": "serviceAccount:terraformtest@gaillard-gcp.iam.gserviceaccount.com",
+                "/iamPolicy/bindings/*/role": "projects/google.com:gaillard-gcp/roles/editor"
               }
             }
           ]
