@@ -884,49 +884,77 @@ gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID
 gcloud config set compute/zone YOUR_ZONE
 ```
 
+```
 export BUILD_PROJECT_ID=$DEVSHELL_PROJECT_ID
 export TEST_PROJECT_ID=PROJECT-ID
+```
 
+```
 gcloud config set compute/zone us-central1-a --project $BUILD_PROJECT_ID
 gcloud config set compute/zone us-us-east4-a --project $TEST_PROJECT_ID
+```
 
+```
 gcloud config set project $BUILD_PROJECT_ID
+```
 
+```
 export BUILD_PROJECT_NUMBER=$(gcloud projects describe $DEVSHELL_PROJECT_ID --format='value(projectNumber)')
+```
 
+Create a bucket
+
+```
 gsutil mb -p ${BUILD_PROJECT_ID} -l us-central1 \
  gs://recommender-tf-state-$BUILD_PROJECT_ID
+```
 
 Create a GitHub repository
 
+```
 cp -r recommender-iac-pipeline-nodejs-tutorial/sample-iac $HOME
 cd $HOME/sample-iac
 git init
 git remote add origin
 https://github.com/GITHUB-ACCOUNT/IAC-REPO-NAME
+```
 
+```
 sed -i "s|__PROJECT_ID__|${TEST_PROJECT_ID}|g" ./terraform.tfvars
+```
 
+```
 sed -i "s|__STATE_BUCKET_NAME__|recommender-tf-state-$BUILD_PROJECT_ID|g" ./backend.tf
+```
 
+```
 git add .
 git commit -m "First Commit"
 git push origin master
+```
 
+```
 ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+```
 
+```
 cat SSH-KEYS-DIR/id_rsa.pub
+```
 
+```
 ssh-keyscan github.com >> ~/.ssh/known_hosts
+```
 
-
+```
 gsutil mb -p ${BUILD_PROJECT_ID} -l us-central1 gs://github-keys-$BUILD_PROJECT_ID
 
 gsutil cp SSH-KEYS-DIR/id_rsa* gs://github-keys-$BUILD_PROJECT_ID
 gsutil cp SSH-KEYS-DIR/known_hosts gs://github-keys-$BUILD_PROJECT_ID
+```
 
+```
 export GITHUB_PAT=<personal-access-token-you-copied>
-
+```
 
 cd ~/multi-cloud-workshop/recommender-iac-pipeline-nodejs-tutorial/parser-service
 
@@ -1009,3 +1037,36 @@ gcloud beta scheduler jobs create http recommender-iam-scheduler \
   --description "Service Account used by Cloud Pub/Sub to push Cloud Build events to the recommender-parser service" \
   --display-name "recommender-ci-subscription-sa" \
   --project $BUILD_PROJECT_ID
+
+  gcloud beta scheduler jobs create http recommender-iam-scheduler \
+  --project $BUILD_PROJECT_ID \
+  --time-zone "America/Los_Angeles" \
+  --schedule="0 */3 * * *" \
+  --uri=$RECOMMENDER_ROUTE_TO_INVOKE_IAM \
+  --description="Scheduler job to invoke recommendation pipeline" \
+--oidc-service-account-email="recommender-scheduler-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com" \
+  --headers="Content-Type=application/json" \
+  --http-method="POST" \
+  --message-body="{ \"repo\": \"<var>IAC-REPO-NAME</var>\", \"projects\": [\"$TEST_PROJECT_ID\"], \"stub\": true }"
+
+  gcloud beta scheduler jobs create http recommender-iam-scheduler \
+  --project $BUILD_PROJECT_ID \
+  --time-zone "America/Phoenix" \
+  --schedule="0 */3 * * *" \
+  --uri=$RECOMMENDER_ROUTE_TO_INVOKE_IAM \
+  --description="Scheduler job to invoke recommendation pipeline" \
+--oidc-service-account-email="recommender-scheduler-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com" \
+  --headers="Content-Type=application/json" \
+  --http-method="POST" \
+  --message-body="{ \"repo\": \"<var>iac-sample-repo</var>\", \"projects\": [\"$TEST_PROJECT_ID\"], \"stub\": true }"
+
+  gcloud beta iam service-accounts create recommender-ci-subscription-sa \
+  --description "Service Account used by Cloud Pub/Sub to push Cloud Build events to the recommender-parser service" \
+  --display-name "recommender-ci-subscription-sa" \
+  --project $BUILD_PROJECT_ID
+
+  From Console --- 
+
+  Modify the recommendation service in Cloud Run to have your Git repo, e.g., GITHUB_ACCOUNT github.com:tgaillard1
+
+  { "repo": "iac-sample-repo", "projects": ["deft-crawler-225115"], "stub": true }
