@@ -1021,52 +1021,60 @@ gcloud beta iam service-accounts create recommender-scheduler-sa \
 
 export RECOMMENDER_ROUTE_TO_INVOKE_IAM=RECOMMENDER-SERVICE-URL/recommendation/iam
 
-gcloud beta scheduler jobs create http recommender-iam-scheduler \
-  --project $BUILD_PROJECT_ID \
-  --time-zone "America/Los_Angeles" \
-  --schedule="0 */3 * * *" \
-  --uri=$RECOMMENDER_ROUTE_TO_INVOKE_IAM \
-  --description="Scheduler job to invoke recommendation pipeline" \
---oidc-service-account-email="recommender-scheduler-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com" \
-  --headers="Content-Type=application/json" \
-  --http-method="POST" \
-  --message-body="{ \"repo\": \"<var>IAC-REPO-NAME</var>\", \"projects\": [\"$TEST_PROJECT_ID\"], \"stub\": true }"
 
 
-  gcloud beta iam service-accounts create recommender-ci-subscription-sa \
-  --description "Service Account used by Cloud Pub/Sub to push Cloud Build events to the recommender-parser service" \
-  --display-name "recommender-ci-subscription-sa" \
-  --project $BUILD_PROJECT_ID
 
-  gcloud beta scheduler jobs create http recommender-iam-scheduler \
-  --project $BUILD_PROJECT_ID \
-  --time-zone "America/Los_Angeles" \
-  --schedule="0 */3 * * *" \
-  --uri=$RECOMMENDER_ROUTE_TO_INVOKE_IAM \
-  --description="Scheduler job to invoke recommendation pipeline" \
---oidc-service-account-email="recommender-scheduler-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com" \
-  --headers="Content-Type=application/json" \
-  --http-method="POST" \
-  --message-body="{ \"repo\": \"<var>IAC-REPO-NAME</var>\", \"projects\": [\"$TEST_PROJECT_ID\"], \"stub\": true }"
+
 
   gcloud beta scheduler jobs create http recommender-iam-scheduler \
   --project $BUILD_PROJECT_ID \
   --time-zone "America/Phoenix" \
   --schedule="0 */3 * * *" \
   --uri=$RECOMMENDER_ROUTE_TO_INVOKE_IAM \
-  --description="Scheduler job to invoke recommendation pipeline" \
+  --description="Scheduler job to invoke IAM recommendation pipeline" \
 --oidc-service-account-email="recommender-scheduler-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com" \
   --headers="Content-Type=application/json" \
   --http-method="POST" \
-  --message-body="{ \"repo\": \"<var>iac-sample-repo</var>\", \"projects\": [\"$TEST_PROJECT_ID\"], \"stub\": true }"
+  --message-body="{ \"repo\": \"iac-demo\", \"projects\": [\"$TEST_PROJECT_ID\"], \"stub\": true }"
 
-  gcloud beta iam service-accounts create recommender-ci-subscription-sa \
-  --description "Service Account used by Cloud Pub/Sub to push Cloud Build events to the recommender-parser service" \
-  --display-name "recommender-ci-subscription-sa" \
-  --project $BUILD_PROJECT_ID
+VM Scheduler
+
+  gcloud beta scheduler jobs create http recommender-vm-scheduler \
+  --project $BUILD_PROJECT_ID \
+  --time-zone "America/Phoenix" \
+  --schedule="0 */3 * * *" \
+  --uri=$RECOMMENDER_ROUTE_TO_INVOKE_VM \
+  --description="Scheduler job to invoke VM recommendation pipeline" \
+  --oidc-service-account-email="recommender-scheduler-sa@$BUILD_PROJECT_ID.iam.gserviceaccount.com" \
+  --headers="Content-Type=application/json" \
+  --http-method="POST" \
+  --message-body="{ \"repo\": \"iac-demo\", \"projects\": [\"$TEST_PROJECT_ID\"], \"stub\": true }"
+
+
+Test again
+Delete instance from test project
+Delete Terraform Recommender Test IAM user
+
+go to ~/iac-demo
+git pull
+
+cp ~/sample-iac/* .
+git add .
+git commit -m "rollback items 2"
+git push origin master
+
+rerun cloud build trigger to master branch
+rerun scheduler to invoke IAM and VM changes
+
+
 
   From Console --- 
 
   Modify the recommendation service in Cloud Run to have your Git repo, e.g., GITHUB_ACCOUNT github.com:tgaillard1
 
   { "repo": "iac-sample-repo", "projects": ["deft-crawler-225115"], "stub": true }
+
+  gcloud beta iam service-accounts create recommender-ci-subscription-sa \
+  --description "Service Account used by Cloud Pub/Sub to push Cloud Build events to the recommender-parser service" \
+  --display-name "recommender-ci-subscription-sa" \
+  --project $BUILD_PROJECT_ID
