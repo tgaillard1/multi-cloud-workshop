@@ -2,21 +2,47 @@ Create kubernetes Cluster for CI/CD
 ```
 cd continuous-integration-on-kubernetes
 
-gcloud container clusters create jenkins-ci \
---num-nodes 2 \
---enable-autoscaling \
---min-nodes 1 \
---max-nodes 5 \
---zone us-central1-a \
---machine-type n1-standard-2 \
---scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform" \
---cluster-version 1.13
+export PROJECT_ID=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
+export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
+export CLUSTER_NAME=jenkins-ci
+export CLUSTER_ZONE=us-central1-a
+export IDNS=${PROJECT_ID}.svc.id.goog
+export MESH_ID="proj-${PROJECT_NUMBER}"
+gcloud config set compute/zone ${CLUSTER_ZONE}
 ```
+
+
+
+export PROJECT_ID=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
+export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
+export CLUSTER_NAME=test-istio
+export CLUSTER_ZONE=us-west2-a
+export IDNS=${PROJECT_ID}.svc.id.goog
+export MESH_ID="proj-${PROJECT_NUMBER}"
+gcloud config set compute/zone ${CLUSTER_ZONE}
+
+
+
+Deploy Cluster
+```
+gcloud beta container clusters create ${CLUSTER_NAME} \
+    --machine-type=n1-standard-4 \
+    --num-nodes=4 \
+    --identity-namespace=${IDNS} \
+    --enable-stackdriver-kubernetes \
+    --subnetwork=default \
+    --labels mesh_id=${MESH_ID} \
+    --zone ${CLUSTER_ZONE} \
+    --scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform"
+```
+
+
 
 Once that operation completes download the credentials for your cluster using the gcloud CLI and confirm cluster is running:
 ```
-gcloud container clusters get-credentials jenkins-ci
+gcloud container clusters get-credentials ${CLUSTER_NAME}
 kubectl get pods
+kubectl get pod -n istio-system
 
 You should see "No resources found"
 ```
@@ -42,17 +68,33 @@ export IDNS=${PROJECT_ID}.svc.id.goog
 export MESH_ID="proj-${PROJECT_NUMBER}"
 gcloud config set compute/zone ${CLUSTER_ZONE}
 
+**********************
+Only if you have existing labels
+export EXISTING_LABELS="env=dev,release=stable"
+
+gcloud beta container clusters update ${CLUSTER_NAME} --identity-namespace=${IDNS}
+gcloud beta container clusters update ${CLUSTER_NAME} --enable-stackdriver-kubernetes
+gcloud beta container clusters update ${CLUSTER_NAME} --update-labels mesh_id=${MESH_ID},${EXISTING_LABELS}
+**********************
+
+gcloud beta container clusters update ${CLUSTER_NAME} --identity-namespace=${IDNS}
+gcloud beta container clusters update ${CLUSTER_NAME} --enable-stackdriver-kubernetes
+gcloud beta container clusters update ${CLUSTER_NAME} --update-labels mesh_id=${MESH_ID}
+
+
+```
 curl --request POST \
   --header "Authorization: Bearer $(gcloud auth print-access-token)" \
   --data '' \
   https://meshconfig.googleapis.com/v1alpha1/projects/${PROJECT_ID}:initialize
+```
 
-gcloud container clusters get-credentials ${CLUSTER_NAME}
 
+```
 kubectl create clusterrolebinding cluster-admin-binding \
   --clusterrole=cluster-admin \
   --user="$(gcloud config get-value core/account)"
-
+```
 
 Download the Anthos Service Mesh installation file to your current working directory:
 
@@ -84,11 +126,7 @@ kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-
 asmctl validate
 asmctl validate --with-testing-workloads
 
-
-
-
-
-
+kubectl label namespace default istio-injection=enabled --overwrite
 
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -131,6 +169,7 @@ In this lab, you will use Helm to install Jenkins from the Charts repository. He
     ```
     ./helm init --service-account=tiller
     ./helm update
+    sudo cp helm /usr/local/bin/helm
     ```
 
 1. Ensure Helm is properly installed by running the following command. You should see versions appear for both the server and the client of ```v2.14.1```:
@@ -154,7 +193,7 @@ You will use a custom [values file](https://github.com/kubernetes/helm/blob/mast
 1. Once that command completes ensure the Jenkins pod goes to the `Running` state and the container is in the `READY` state:
 
     ```shell
-    $ kubectl get pods
+    kubectl get pods
     NAME                          READY     STATUS    RESTARTS   AGE
     cd-jenkins-7c786475dd-vbhg4   1/1       Running   0          1m
     ```
