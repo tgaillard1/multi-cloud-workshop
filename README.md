@@ -428,6 +428,8 @@ ${HELM_PATH}/helm install -n spin stable/spinnaker -f spinnaker-config.yaml --ti
 --version 1.8.1 --wait
 ```
 
+${HELM_PATH}/helm install -n spin stable/spinnaker -f spinnaker-config.yaml --timeout 600 \
+--version 1.8.1 --wait --debug
 
 ******************************************************
 Adding Kubernetes clusters to Spinnaker

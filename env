@@ -1,8 +1,8 @@
 # Base dirs
     export BASE_DIR=$(pwd)
     export WORKDIR=$BASE_DIR/workdir
-    export PATH=$PATH:$WORK_DIR/bin:
     export SPINNAKER_DIR=$BASE_DIR/spinnaker 
+    export HELM_PATH=$WORKDIR/helm-$HELM_VERSION
 
 
 # GCP project
@@ -14,7 +14,8 @@
 # Tools versions
     export ISTIO_VERSION=1.3.2
     export KUBECTX_VERSION=v0.7.0
-    export HELM_VERSION=v2.14.3
+    export HELM_VERSION=v2.13.0
+    export HELM_PATH=$WORKDIR/helm-$HELM_VERSION
     export CLUSTER_VERSION=1.15
     export KOPS_VERSION=1.15.0
 
