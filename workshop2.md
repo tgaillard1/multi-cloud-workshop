@@ -18,9 +18,9 @@ gcloud config set compute/zone YOUR_ZONE
 
 Create Spinnaker Home
 ```
-mkdir $HOME/spinnaker
-cd $HOME/spinnaker
-WORKDIR=$(pwd)
+source ./env
+
+cd $WORK_DIR
 ```
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&

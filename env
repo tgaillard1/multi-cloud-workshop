@@ -1,32 +1,16 @@
-
-
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
-export PROJECT_ID=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
-export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
-export CLUSTER_NAME1=spinnaker
-export CLUSTER_NAME2=west
-export CLUSTER_NAME3=east
-export CLUSTER_ZONE1=us-central1-a
-export CLUSTER_ZONE2=us-west2-b
-export CLUSTER_ZONE3=us-east4-a
-export IDNS=${PROJECT_ID}.svc.id.goog
-export MESH_ID="proj-${PROJECT_NUMBER}"
-
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
 # Base dirs
     export BASE_DIR=$(pwd)
     export WORK_DIR=$BASE_DIR/workdir
     export PATH=$PATH:$WORK_DIR/bin:
-    WORKDIR=$(pwd) 
+    export WORK_DIR=$BASE_DIR/spinnaker 
+
 
 
 # GCP project
     export PROJECT=$(gcloud config get-value project)
-
+    export PROJECT_ID=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
+    export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
+    
 
 # Tools versions
     export ISTIO_VERSION=1.3.2
@@ -37,25 +21,31 @@ export MESH_ID="proj-${PROJECT_NUMBER}"
 
 
 ## Setting variables for GKE
-    export CLUSTER_NAME="central"
-    export CLUSTER_ZONE="us-central1-b"
-    export CLUSTER_KUBECONFIG=$WORK_DIR/$CLUSTER_NAME.context
+    export CLUSTER_NAME1=spinnaker
+    export CLUSTER_NAME2=west
+    export CLUSTER_NAME3=east
+    export CLUSTER_ZONE1=us-central1-a
+    export CLUSTER_ZONE2=us-west2-b
+    export CLUSTER_ZONE3=us-east4-a
+    export NODE_COUNT=3
+    export NODE_SIZE=n1-standard-4
+    export IDNS=${PROJECT_ID}.svc.id.goog
+    export MESH_ID="proj-${PROJECT_NUMBER}"
+
+# export CLUSTER_KUBECONFIG=$WORK_DIR/$CLUSTER_NAME.context
 
 
 # Variables for remote kops cluster
-    export REMOTE_CLUSTER_NAME_BASE="remote"
-    export REMOTE_CLUSTER_NAME=$REMOTE_CLUSTER_NAME_BASE.k8s.local
-    export KOPS_STORE=gs://$PROJECT-kops-$REMOTE_CLUSTER_NAME_BASE
-    export REMOTE_KUBECONFIG=$WORK_DIR/remote.context
-    export NODE_COUNT=3
-    export NODE_SIZE=n1-standard-4
-    export ZONES=us-central1-a
-    export INSTANCE_IP=$(curl -s api.ipify.org)
-    export INSTANCE_CIDR=$INSTANCE_IP/32
+#     export REMOTE_CLUSTER_NAME_BASE="remote"
+#     export REMOTE_CLUSTER_NAME=$REMOTE_CLUSTER_NAME_BASE.k8s.local
+#     export KOPS_STORE=gs://$PROJECT-kops-$REMOTE_CLUSTER_NAME_BASE
+#     export REMOTE_KUBECONFIG=$WORK_DIR/remote.context
+#    export INSTANCE_IP=$(curl -s api.ipify.org)
+#    export INSTANCE_CIDR=$INSTANCE_IP/32
 
 
 
 # Variables for istio
-    export ISTIO_DIR=$WORK_DIR/istio-$ISTIO_VERSION
-    export ISTIO_CONFIG_DIR="$BASE_DIR/hybrid-multicluster/istio"
+#    export ISTIO_DIR=$WORK_DIR/istio-$ISTIO_VERSION
+#     export ISTIO_CONFIG_DIR="$BASE_DIR/hybrid-multicluster/istio"
 
