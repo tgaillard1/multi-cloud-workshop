@@ -1,9 +1,8 @@
 # Base dirs
     export BASE_DIR=$(pwd)
-    export WORK_DIR=$BASE_DIR/workdir
+    export WORKDIR=$BASE_DIR/workdir
     export PATH=$PATH:$WORK_DIR/bin:
-    export WORK_DIR=$BASE_DIR/spinnaker 
-
+    export SPINNAKER_DIR=$BASE_DIR/spinnaker 
 
 
 # GCP project
@@ -22,8 +21,8 @@
 
 ## Setting variables for GKE
     export CLUSTER_NAME1=spinnaker
-    export CLUSTER_NAME2=west
-    export CLUSTER_NAME3=east
+    export CLUSTER_NAME2=dev
+    export CLUSTER_NAME3=stage
     export CLUSTER_ZONE1=us-central1-a
     export CLUSTER_ZONE2=us-west2-b
     export CLUSTER_ZONE3=us-east4-a

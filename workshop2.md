@@ -39,8 +39,8 @@ export MESH_ID="proj-${PROJECT_NUMBER}"
 
 
 gcloud beta container clusters create ${CLUSTER_NAME1} \
-    --machine-type=n1-standard-4 \
-    --num-nodes=3 \
+    --machine-type=${NODE_SIZE} \
+    --num-nodes=${NODE_COUNT} \
     --identity-namespace=${IDNS} \
     --enable-stackdriver-kubernetes \
     --subnetwork=default \
@@ -49,8 +49,8 @@ gcloud beta container clusters create ${CLUSTER_NAME1} \
     --scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform"
 
 gcloud beta container clusters create ${CLUSTER_NAME2} \
-    --machine-type=n1-standard-4 \
-    --num-nodes=3 \
+    --machine-type=${NODE_SIZE} \
+    --num-nodes=${NODE_COUNT} \
     --identity-namespace=${IDNS} \
     --enable-stackdriver-kubernetes \
     --subnetwork=default \
@@ -58,9 +58,9 @@ gcloud beta container clusters create ${CLUSTER_NAME2} \
     --zone ${CLUSTER_ZONE2} \
     --scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform"
 
-gcloud beta container clusters create test \
-    --machine-type=n1-standard-4 \
-    --num-nodes=3 \
+gcloud beta container clusters create ${CLUSTER_NAME3} \
+    --machine-type=${NODE_SIZE} \
+    --num-nodes=${NODE_COUNT} \
     --identity-namespace=${IDNS} \
     --enable-stackdriver-kubernetes \
     --subnetwork=default \
