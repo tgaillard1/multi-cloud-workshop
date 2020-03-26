@@ -2,50 +2,239 @@ Create kubernetes Cluster for CI/CD
 ```
 cd continuous-integration-on-kubernetes
 
-export PROJECT_ID=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
-export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
-export CLUSTER_NAME=jenkins-ci
-export CLUSTER_ZONE=us-central1-a
-export IDNS=${PROJECT_ID}.svc.id.goog
-export MESH_ID="proj-${PROJECT_NUMBER}"
-gcloud config set compute/zone ${CLUSTER_ZONE}
-```
-
-
-
-export PROJECT_ID=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
-export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
-export CLUSTER_NAME=test-istio
-export CLUSTER_ZONE=us-west2-a
-export IDNS=${PROJECT_ID}.svc.id.goog
-export MESH_ID="proj-${PROJECT_NUMBER}"
-gcloud config set compute/zone ${CLUSTER_ZONE}
-
-
-
 Deploy Cluster
 ```
-gcloud beta container clusters create ${CLUSTER_NAME} \
-    --machine-type=n1-standard-4 \
-    --num-nodes=4 \
+gcloud beta container clusters create ${CLUSTER_NAME0} \
+    --machine-type=${NODE_SIZE} \
+    --num-nodes=${NODE_COUNT} \
     --identity-namespace=${IDNS} \
     --enable-stackdriver-kubernetes \
     --subnetwork=default \
     --labels mesh_id=${MESH_ID} \
-    --zone ${CLUSTER_ZONE} \
+    --zone ${CLUSTER_ZONE0} \
     --scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform"
 ```
 
-
-
 Once that operation completes download the credentials for your cluster using the gcloud CLI and confirm cluster is running:
 ```
-gcloud container clusters get-credentials ${CLUSTER_NAME}
+gcloud container clusters get-credentials ${CLUSTER_NAME0}
 kubectl get pods
 kubectl get pod -n istio-system
 
 You should see "No resources found"
 ```
+
+*********************************************************************
+*********************************************************************
+
+Adding Config Management
+
+*********************************************************************
+*********************************************************************
+Install terraform gke
+
+curl -Lo $WORKDIR/gke-tf-linux-amd64 https://github.com/GoogleCloudPlatform/gke-terraform-generator/releases/download/0.1-beta.1/gke-tf-linux-amd64
+chmod 755 $WORKDIR/gke-tf-linux-amd64
+sudo cp $WORKDIR/gke-tf-linux-amd64 /usr/local/bin/gke-tf
+
+
+cd anthos-tf/
+
+~/gke-tf gen -d ./terraform -f gke-tf-demo.yaml -o -p ${PROJECT}
+cd terraform
+terraform init
+terraform plan
+terraform apply
+
+Anthos Nomos Install
+gsutil cp gs://config-management-release/released/latest/linux_amd64/nomos nomos
+chmod +x nomos
+sudo cp nomos /usr/local/bin/nomos
+
+opsys=linux
+curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |\
+  grep browser_download |\
+  grep $opsys |\
+  cut -d '"' -f 4 |\
+  xargs curl -L -o kustomize
+
+sudo chmod +x kustomize
+sudo cp kustomize /usr/local/bin/kustomize
+
+
+REPO="anthos-demo"
+PROJECT=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
+ACCOUNT=$(gcloud config list --format 'value(core.account)' 2>/dev/null)
+
+cp -rf ~/multi-cloud-workshop/anthos-config-mgmt/ .
+cd anthos-config-mgmt/
+git clone https://github.com/tgaillard1/anthos-demo.git
+nomos init
+ls -lrt
+cd anthos-demo/
+nomos init
+
+git add .
+git commit -m 'Adding initial files for nomos'
+git push origin master
+
+((((((((((()))))))))))
+
+sudo cp gke-tf-linux-amd64 /usr/local/bin/gke-tf
+sudo cp kustomize /usr/local/bin/kustomize
+sudo cp nomos /usr/local/bin/nomos
+
+Login to cluster
+gcloud container clusters get-credentials spinnaker --zone us-west2-a
+gcloud container clusters get-credentials jenkins-ci --zone us-central1-a
+gcloud container clusters get-credentials east --zone us-east4-a
+gcloud container clusters get-credentials west --zone us-west2-b
+
+	
+
+kubectx (to verify cluster)
+
+
+kubectl create clusterrolebinding cluster-admin-binding \
+  --clusterrole cluster-admin \
+  --user tgaillard@altostrat.com
+
+
+gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml config-management-operator.yaml
+
+kubectl apply -f config-management-operator.yaml
+
+Demo uses the altostrat GSR account -- this is for GIT
+
+ssh-keygen -t rsa -b 4096 \
+ -C "tgaillard1" \
+ -N '' \
+ -f /home/tgaillard/.ssh/anthos-demo-key
+
+
+Add deployment key to GIT repo
+
+kubectl create secret generic git-creds \
+--namespace=config-management-system \
+--from-file=ssh=/home/tgaillard/.ssh/anthos-demo-key
+
+# config-management.yaml
+
+cat > config-management.yaml <<EOF
+apiVersion: configmanagement.gke.io/v1
+kind: ConfigManagement
+metadata:
+  name: config-management
+spec:
+  # clusterName is required and must be unique among all managed clusters
+  clusterName: demo-cluster
+  git:
+    syncRepo: git@github.com:tgaillard1/anthos-demo.git
+    syncBranch: master
+    secretType: ssh
+    policyDir: "."
+EOF
+
+kubectl apply -f config-management.yaml
+
+nomos status to validate --> SYNCED
+
+*********************************************************************
+*********************************************************************
+
+Adding Anthos Service Mesh -- Existing Cluster
+
+*********************************************************************
+
+gcloud config set project deft-crawler-225115
+export PROJECT_ID=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
+
+export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
+
+gcloud services enable \
+    container.googleapis.com \
+    compute.googleapis.com \
+    stackdriver.googleapis.com \
+    meshca.googleapis.com \
+    meshtelemetry.googleapis.com \
+    meshconfig.googleapis.com \
+    iamcredentials.googleapis.com \
+    anthos.googleapis.com
+
+
+
+export CLUSTER_NAME=spinnaker
+export CLUSTER_ZONE=us-west2-a
+export IDNS=${PROJECT_ID}.svc.id.goog
+export MESH_ID="proj-${PROJECT_NUMBER}"
+gcloud config set compute/zone ${CLUSTER_ZONE}
+gcloud container clusters describe ${CLUSTER_NAME}
+
+
+export CLUSTER_NAME=east
+export CLUSTER_ZONE=us-east4-a
+export IDNS=${PROJECT_ID}.svc.id.goog
+export MESH_ID="proj-${PROJECT_NUMBER}"
+gcloud config set compute/zone ${CLUSTER_ZONE}
+gcloud container clusters describe ${CLUSTER_NAME}
+
+export CLUSTER_NAME=west
+export CLUSTER_ZONE=us-west2-b
+export IDNS=${PROJECT_ID}.svc.id.goog
+export MESH_ID="proj-${PROJECT_NUMBER}"
+gcloud config set compute/zone ${CLUSTER_ZONE}
+gcloud container clusters describe ${CLUSTER_NAME}
+
+**********************
+Only if you have existing labels
+export EXISTING_LABELS="env=dev,release=stable"
+
+gcloud beta container clusters update ${CLUSTER_NAME} --identity-namespace=${IDNS}
+gcloud beta container clusters update ${CLUSTER_NAME} --enable-stackdriver-kubernetes
+gcloud beta container clusters update ${CLUSTER_NAME} --update-labels mesh_id=${MESH_ID},${EXISTING_LABELS}
+**********************
+
+gcloud beta container clusters update ${CLUSTER_NAME} --identity-namespace=${IDNS}
+gcloud beta container clusters update ${CLUSTER_NAME} --enable-stackdriver-kubernetes
+gcloud beta container clusters update ${CLUSTER_NAME} --update-labels mesh_id=${MESH_ID}
+
+
+curl --request POST \
+--header "Authorization: Bearer $(gcloud auth print-access-token)" \
+--data '' \
+https://meshconfig.googleapis.com/v1alpha1/projects/${PROJECT_ID}:initialize
+
+gcloud container clusters get-credentials ${CLUSTER_NAME}
+
+kubectl create clusterrolebinding cluster-admin-binding \
+--clusterrole=cluster-admin \
+--user="$(gcloud config get-value core/account)"
+
+curl -LO https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz
+
+curl -LO https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz.1.sig
+openssl dgst -verify - -signature istio-1.4.6-asm.0-linux.tar.gz.1.sig istio-1.4.6-asm.0-linux.tar.gz <<'EOF'
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZrGCUaJJr1H8a36sG4UUoXvlXvZ
+wQfk16sxprI2gOJ2vFFggdq3ixF2h4qNBt0kI7ciDhgpwS8t+/960IsIgw==
+-----END PUBLIC KEY-----
+EOF
+
+tar xzf istio-1.4.6-asm.0-linux.tar.gz
+
+cd istio-1.4.6-asm.0
+
+export PATH=$PWD/bin:$PATH
+
+istioctl manifest apply --set profile=asm \
+  --set values.global.trustDomain=${IDNS} \
+  --set values.global.sds.token.aud=${IDNS} \
+  --set values.nodeagent.env.GKE_CLUSTER_URL=https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE}/clusters/${CLUSTER_NAME} \
+  --set values.global.meshID=${MESH_ID} \
+  --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME}|${CLUSTER_ZONE}"
+
+
+kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -60,13 +249,7 @@ gcloud services enable \
     anthos.googleapis.com
 
 
-export PROJECT_ID=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
-export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
-export CLUSTER_NAME=jenkins-ci
-export CLUSTER_ZONE=us-central1-a
-export IDNS=${PROJECT_ID}.svc.id.goog
-export MESH_ID="proj-${PROJECT_NUMBER}"
-gcloud config set compute/zone ${CLUSTER_ZONE}
+
 
 **********************
 Only if you have existing labels

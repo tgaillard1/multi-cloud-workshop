@@ -1,0 +1,167 @@
+
+
+git clone https://github.com/GoogleCloudPlatform/spinnaker-for-gcp.git
+
+git config --global user.email \
+    "timlgaillard@gmail.com"
+git config --global user.name \
+    "tgaillard1"
+
+git config --global user.email \
+    "[EMAIL_ADDRESS]"
+git config --global user.name \
+    "[USERNAME]"
+
+PROJECT_ID=tgproject1-221717 \
+    ~/testme/spinnaker-for-gcp/scripts/install/setup_properties.sh
+
+
+
+PROJECT_ID=tgproject1-221717 \
+    ~/cloudshell_open/spinnaker-for-gcp/scripts/install/setup_properties.sh
+
+
+
+~/cloudshell_open/spinnaker-for-gcp/scripts/install/setup.sh
+
+~/testme/spinnaker-for-gcp/scripts/install/setup.sh
+
+
+
+
+
+gcloud container clusters create west --zone us-west2-b \
+    --num-nodes 3 --machine-type n1-standard-2 --async
+
+gcloud container clusters create east --zone us-east4-a \
+    --num-nodes 3 --machine-type n1-standard-2
+
+export PROJECT_ID=$(gcloud info --format='value(config.project)')
+gcloud container clusters get-credentials east --zone us-east4-a --project ${PROJECT_ID}
+gcloud container clusters get-credentials west --zone us-west2-b --project ${PROJECT_ID}
+gcloud container clusters get-credentials spinnaker --zone us-west2-a --project ${PROJECT_ID}
+
+kubectx east=gke_${PROJECT_ID}_us-east4-a_east
+kubectx west=gke_${PROJECT_ID}_us-west2-b_west
+kubectx spinnaker=gke_${PROJECT_ID}_us-west2-a_spinnaker
+
+kubectl create clusterrolebinding user-admin-binding \
+    --clusterrole=cluster-admin \
+    --user=$(gcloud config get-value account) \
+    --context spinnaker
+kubectl create clusterrolebinding user-admin-binding \
+    --clusterrole=cluster-admin \
+    --user=$(gcloud config get-value account) \
+    --context west
+kubectl create clusterrolebinding user-admin-binding \
+    --clusterrole=cluster-admin \
+    --user=$(gcloud config get-value account) \
+    --context east
+
+
+
+cat > spinnaker-sa.yaml <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spinnaker
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+ name: spinnaker-role
+rules:
+- apiGroups: [""]
+  resources: ["namespaces", "configmaps", "events", "replicationcontrollers", "serviceaccounts", "pods/log"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["pods", "services", "secrets"]
+  verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+- apiGroups: ["autoscaling"]
+  resources: ["horizontalpodautoscalers"]
+  verbs: ["list", "get"]
+- apiGroups: ["apps"]
+  resources: ["controllerrevisions", "statefulsets"]
+  verbs: ["list"]
+- apiGroups: ["extensions", "apps"]
+  resources: ["deployments", "replicasets", "ingresses"]
+  verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+# These permissions are necessary for halyard to operate. We also use this role to deploy Spinnaker.
+- apiGroups: [""]
+  resources: ["services/proxy", "pods/portforward"]
+  verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+ name: spinnaker-role-binding
+roleRef:
+ apiGroup: rbac.authorization.k8s.io
+ kind: ClusterRole
+ name: spinnaker-role
+subjects:
+- namespace: spinnaker
+  kind: ServiceAccount
+  name: spinnaker-service-account
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+ name: spinnaker-service-account
+ namespace: spinnaker
+EOF
+
+
+
+
+kubectl --context west apply -f spinnaker-sa.yaml
+kubectl --context east apply -f spinnaker-sa.yaml
+
+export DECK_POD=$(kubectl get pods --namespace spinnaker -l "cluster=spin-deck" \
+    -o jsonpath="{.items[0].metadata.name}")
+kubectl port-forward --namespace spinnaker $DECK_POD 8080:9000 >> /dev/null &
+
+
+WORKDIR
+
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-cluster $WEST_CLUSTER \
+    --certificate-authority=$WORKDIR/west_cluster_ca.crt \
+    --embed-certs=true \
+    --server $WEST_SERVER
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-credentials $WEST_USER --token $WEST_TOKEN
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-context west --user $WEST_USER --cluster $WEST_CLUSTER
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-cluster $EAST_CLUSTER \
+    --certificate-authority=$WORKDIR/east_cluster_ca.crt \
+    --embed-certs=true \
+    --server $EAST_SERVER
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-credentials $EAST_USER --token $EAST_TOKEN
+kubectl config --kubeconfig=$KUBECONFIG_FILE set-context east --user $EAST_USER --cluster $EAST_CLUSTER
+
+~/testme/spinnaker-for-gcp/scripts/manage/add_gke_account.sh
+
+
+kubectl config use-context gke_${DEVSHELL_PROJECT_ID}_${ZONE}_spinnaker-1
+
+~/testme/spinnaker-for-gcp/scripts/manage/push_and_apply.sh
+
+switch back to dev context and repeat
+
+kubectx dev
+
+~/testme/spinnaker-for-gcp/scripts/manage/add_gke_account.sh
+
+kubectl config use-context gke_${DEVSHELL_PROJECT_ID}_${ZONE}_spinnaker-1
+
+~/testme/spinnaker-for-gcp/scripts/manage/push_and_apply.sh
+
+
+Install AWS Managed account
+
+Install AWS CLI
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+/usr/local/bin/aws --version
+

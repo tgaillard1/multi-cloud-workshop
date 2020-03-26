@@ -23,6 +23,19 @@ source ./env
 cd $SPINNAKER_DIR
 ```
 
+HELM_VERSION=v2.14.1
+HELM_PATH="$WORKDIR"/helm-"$HELM_VERSION"
+wget https://storage.googleapis.com/kubernetes-helm/helm-"$HELM_VERSION"-linux-amd64.tar.gz
+tar -xvzf helm-"$HELM_VERSION"-linux-amd64.tar.gz
+mv linux-amd64 "$HELM_PATH"
+
+gcloud container clusters create spinnaker --zone us-west2-a \
+    --num-nodes 4 --machine-type n1-standard-2 --async
+gcloud container clusters create west --zone us-west2-b \
+    --num-nodes 3 --machine-type n1-standard-2 --async
+gcloud container clusters create east --zone us-east4-a \
+    --num-nodes 3 --machine-type n1-standard-2
+
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
@@ -37,6 +50,15 @@ export CLUSTER_ZONE3=us-east4-a
 export IDNS=${PROJECT_ID}.svc.id.goog
 export MESH_ID="proj-${PROJECT_NUMBER}"
 
+
+gcloud container clusters create spinnaker --zone us-west2-a \
+    --num-nodes 3 --machine-type n1-standard-2 --async
+
+gcloud container clusters create west --zone us-west2-b \
+    --num-nodes 3 --machine-type n1-standard-2 --async
+
+gcloud container clusters create east --zone us-east4-a \
+    --num-nodes 3 --machine-type n1-standard-2
 
 
 
@@ -110,6 +132,8 @@ gcloud container clusters list
 Connect to all three clusters 
 ```
 gcloud container clusters get-credentials ${CLUSTER_NAME1} --zone ${CLUSTER_ZONE1} --project ${PROJECT_ID}
+
+gcloud container clusters get-credentials spinnaker-1 --zone us-east1-c --project ${PROJECT_ID}
 gcloud container clusters get-credentials ${CLUSTER_NAME2} --zone ${CLUSTER_ZONE2} --project ${PROJECT_ID}
 gcloud container clusters get-credentials ${CLUSTER_NAME3} --zone ${CLUSTER_ZONE3} --project ${PROJECT_ID}
 ```
