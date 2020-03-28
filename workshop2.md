@@ -675,3 +675,14 @@ git commit -a -m "Change color to orange"
 git tag v1.5.3
 git push --tags
 ```
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ADD AWS -- https://www.spinnaker.io/setup/install/providers/kubernetes-v2/aws-eks/
+
+curl -O https://d3079gxvs8ayeg.cloudfront.net/templates/managed.yaml  
+
+aws cloudformation deploy --stack-name spinnaker-managed-infrastructure-setup --template-file managed.yaml \
+--parameter-overrides AuthArn=$AUTH_ARN ManagingAccountId=$MANAGING_ACCOUNT_ID --capabilities CAPABILITY_NAMED_IAM
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

@@ -17,128 +17,112 @@ PROJECT_ID=tgproject1-221717 \
 
 
 
-PROJECT_ID=tgproject1-221717 \
-    ~/cloudshell_open/spinnaker-for-gcp/scripts/install/setup_properties.sh
-
-
-
-~/cloudshell_open/spinnaker-for-gcp/scripts/install/setup.sh
-
 ~/testme/spinnaker-for-gcp/scripts/install/setup.sh
 
 
 
-
-
-gcloud container clusters create west --zone us-west2-b \
-    --num-nodes 3 --machine-type n1-standard-2 --async
-
-gcloud container clusters create east --zone us-east4-a \
-    --num-nodes 3 --machine-type n1-standard-2
-
-export PROJECT_ID=$(gcloud info --format='value(config.project)')
-gcloud container clusters get-credentials east --zone us-east4-a --project ${PROJECT_ID}
-gcloud container clusters get-credentials west --zone us-west2-b --project ${PROJECT_ID}
-gcloud container clusters get-credentials spinnaker --zone us-west2-a --project ${PROJECT_ID}
-
-kubectx east=gke_${PROJECT_ID}_us-east4-a_east
-kubectx west=gke_${PROJECT_ID}_us-west2-b_west
-kubectx spinnaker=gke_${PROJECT_ID}_us-west2-a_spinnaker
-
-kubectl create clusterrolebinding user-admin-binding \
-    --clusterrole=cluster-admin \
-    --user=$(gcloud config get-value account) \
-    --context spinnaker
-kubectl create clusterrolebinding user-admin-binding \
-    --clusterrole=cluster-admin \
-    --user=$(gcloud config get-value account) \
-    --context west
-kubectl create clusterrolebinding user-admin-binding \
-    --clusterrole=cluster-admin \
-    --user=$(gcloud config get-value account) \
-    --context east
-
-
-
-cat > spinnaker-sa.yaml <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: spinnaker
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
- name: spinnaker-role
-rules:
-- apiGroups: [""]
-  resources: ["namespaces", "configmaps", "events", "replicationcontrollers", "serviceaccounts", "pods/log"]
-  verbs: ["get", "list"]
-- apiGroups: [""]
-  resources: ["pods", "services", "secrets"]
-  verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
-- apiGroups: ["autoscaling"]
-  resources: ["horizontalpodautoscalers"]
-  verbs: ["list", "get"]
-- apiGroups: ["apps"]
-  resources: ["controllerrevisions", "statefulsets"]
-  verbs: ["list"]
-- apiGroups: ["extensions", "apps"]
-  resources: ["deployments", "replicasets", "ingresses"]
-  verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
-# These permissions are necessary for halyard to operate. We also use this role to deploy Spinnaker.
-- apiGroups: [""]
-  resources: ["services/proxy", "pods/portforward"]
-  verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
- name: spinnaker-role-binding
-roleRef:
- apiGroup: rbac.authorization.k8s.io
- kind: ClusterRole
- name: spinnaker-role
-subjects:
-- namespace: spinnaker
-  kind: ServiceAccount
-  name: spinnaker-service-account
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
- name: spinnaker-service-account
- namespace: spinnaker
-EOF
-
-
-
-
-kubectl --context west apply -f spinnaker-sa.yaml
-kubectl --context east apply -f spinnaker-sa.yaml
-
 export DECK_POD=$(kubectl get pods --namespace spinnaker -l "cluster=spin-deck" \
     -o jsonpath="{.items[0].metadata.name}")
-kubectl port-forward --namespace spinnaker $DECK_POD 8080:9000 >> /dev/null &
+kubectl port-forward --namespace spinnaker $DECK_POD 9080:9000 >> /dev/null &
+
+Set up additonal clusters
+
+gcloud beta container clusters create ${CLUSTER_NAME2} \
+    --machine-type=${NODE_SIZE} \
+    --num-nodes=${NODE_COUNT} \
+    --identity-namespace=${IDNS} \
+    --enable-stackdriver-kubernetes \
+    --subnetwork=default \
+    --labels mesh_id=${MESH_ID} \
+    --zone ${CLUSTER_ZONE2} \
+    --scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform"
+
+gcloud beta container clusters create ${CLUSTER_NAME3} \
+    --machine-type=${NODE_SIZE} \
+    --num-nodes=${NODE_COUNT} \
+    --identity-namespace=${IDNS} \
+    --enable-stackdriver-kubernetes \
+    --subnetwork=default \
+    --labels mesh_id=${MESH_ID} \
+    --zone ${CLUSTER_ZONE3} \
+    --scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform"
+
+Connect to clusters
+```
+gcloud container clusters get-credentials ${CLUSTER_NAME2} --zone ${CLUSTER_ZONE2} --project ${PROJECT_ID}
+gcloud container clusters get-credentials ${CLUSTER_NAME3} --zone ${CLUSTER_ZONE3} --project ${PROJECT_ID}
+```
+
+#Rename clusters
+kubectx ${CLUSTER_NAME2}=gke_${PROJECT_ID}_${CLUSTER_ZONE2}_${CLUSTER_NAME2}
+kubectx ${CLUSTER_NAME3}=gke_${PROJECT_ID}_${CLUSTER_ZONE3}_${CLUSTER_NAME3}
 
 
-WORKDIR
+kubectl create clusterrolebinding user-admin-binding \
+    --clusterrole=cluster-admin \
+    --user=$(gcloud config get-value account) \
+    --context ${CLUSTER_NAME2}
+kubectl create clusterrolebinding user-admin-binding \
+    --clusterrole=cluster-admin \
+    --user=$(gcloud config get-value account) \
+    --context ${CLUSTER_NAME3}
 
-kubectl config --kubeconfig=$KUBECONFIG_FILE set-cluster $WEST_CLUSTER \
-    --certificate-authority=$WORKDIR/west_cluster_ca.crt \
-    --embed-certs=true \
-    --server $WEST_SERVER
-kubectl config --kubeconfig=$KUBECONFIG_FILE set-credentials $WEST_USER --token $WEST_TOKEN
-kubectl config --kubeconfig=$KUBECONFIG_FILE set-context west --user $WEST_USER --cluster $WEST_CLUSTER
-kubectl config --kubeconfig=$KUBECONFIG_FILE set-cluster $EAST_CLUSTER \
-    --certificate-authority=$WORKDIR/east_cluster_ca.crt \
-    --embed-certs=true \
-    --server $EAST_SERVER
-kubectl config --kubeconfig=$KUBECONFIG_FILE set-credentials $EAST_USER --token $EAST_TOKEN
-kubectl config --kubeconfig=$KUBECONFIG_FILE set-context east --user $EAST_USER --cluster $EAST_CLUSTER
+
+Adding Anthos Service Mesh -- Existing Cluster
+
+*********************************************************************
+
+curl --request POST \
+--header "Authorization: Bearer $(gcloud auth print-access-token)" \
+--data '' \
+https://meshconfig.googleapis.com/v1alpha1/projects/${PROJECT_ID}:initialize
+
+
+curl -Lo $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz
+
+curl -Lo $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz.1.sig https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz.1.sig
+openssl dgst -verify - -signature $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz.1.sig $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz <<'EOF'
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZrGCUaJJr1H8a36sG4UUoXvlXvZ
+wQfk16sxprI2gOJ2vFFggdq3ixF2h4qNBt0kI7ciDhgpwS8t+/960IsIgw==
+-----END PUBLIC KEY-----
+EOF
+
+tar xzf istio-1.4.6-asm.0-linux.tar.gz
+
+cd $WORKDIR/istio-1.4.6-asm.0
+
+export PATH=$PWD/bin:$PATH
+
+istioctl manifest apply --set profile=asm \
+  --set values.global.trustDomain=${IDNS} \
+  --set values.global.sds.token.aud=${IDNS} \
+  --set values.nodeagent.env.GKE_CLUSTER_URL=https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE0}/clusters/${CLUSTER_NAME0} \
+  --set values.global.meshID=${MESH_ID} \
+  --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME0}|${CLUSTER_ZONE0}"
+
+
+kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system
+
+asmctl validate
+asmctl validate --with-testing-workloads
+
+kubectl label namespace default istio-injection=enabled --overwrite
+
+
+&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+
+
+
+
+
+
+
+
+
 
 ~/testme/spinnaker-for-gcp/scripts/manage/add_gke_account.sh
-
 
 kubectl config use-context gke_${DEVSHELL_PROJECT_ID}_${ZONE}_spinnaker-1
 
