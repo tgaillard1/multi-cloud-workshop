@@ -16,7 +16,6 @@ PROJECT_ID=tgproject1-221717 \
     ~/testme/spinnaker-for-gcp/scripts/install/setup_properties.sh
 
 
-
 ~/testme/spinnaker-for-gcp/scripts/install/setup.sh
 
 gcloud container clusters get-credentials spinnaker-2 --zone us-east1-c --project ${PROJECT_ID}
@@ -68,6 +67,105 @@ kubectl create clusterrolebinding user-admin-binding \
     --user=$(gcloud config get-value account) \
     --context ${CLUSTER_NAME3}
 
+
+*********************************************************************
+*********************************************************************
+
+Adding Config Management
+https://github.com/GoogleCloudPlatform/gke-anthos-holistic-demo/tree/master/anthos
+
+*********************************************************************
+*********************************************************************
+
+------------
+Anthos Nomos Install
+gsutil cp gs://config-management-release/released/latest/linux_amd64/nomos $WORKDIR/nomos
+chmod +x $WORKDIR/nomos
+sudo cp $WORKDIR/nomos /usr/local/bin/nomos
+
+opsys=linux
+curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |\
+  grep browser_download |\
+  grep $opsys |\
+  cut -d '"' -f 4 |\
+  xargs curl -L -o kustomize
+
+sudo chmod +x kustomize
+sudo cp kustomize /usr/local/bin/kustomize
+
+
+REPO="anthos-demo"
+PROJECT=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
+ACCOUNT=$(gcloud config list --format 'value(core.account)' 2>/dev/null)
+
+cp -rf ~/multi-cloud-workshop/anthos-config-mgmt/ .
+cd anthos-config-mgmt/
+git clone https://github.com/tgaillard1/anthos-demo.git
+nomos init
+ls -lrt
+cd anthos-demo/
+nomos init
+
+git add .
+git commit -m 'Adding initial files for nomos'
+git push origin master
+
+kubectx (to verify cluster)
+
+kubectl create clusterrolebinding cluster-admin-binding \
+  --clusterrole cluster-admin \
+  --user="$(gcloud config get-value core/account)"
+
+
+gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml config-management-operator.yaml
+
+kubectl apply -f config-management-operator.yaml
+
+Demo uses the altostrat GSR account -- this is for GIT
+
+ssh-keygen -t rsa -b 4096 \
+ -C "tgaillard1" \
+ -N '' \
+ -f /home/tgaillard/.ssh/anthos-demo-key
+
+---------------------
+Add deployment key to GIT repo
+Go to Git -- Repo --> anthos-demo --> settings --> Deploy keys --> Add deploy key
+
+
+cat /home/tgaillard/.ssh/anthos-demo-key.pub
+
+copy contents and add with --> Allow write access
+---------------------
+
+kubectl create secret generic git-creds \
+--namespace=config-management-system \
+--from-file=ssh=/home/tgaillard/.ssh/anthos-demo-key
+
+
+# config-management.yaml
+
+cat > config-management.yaml <<EOF
+apiVersion: configmanagement.gke.io/v1
+kind: ConfigManagement
+metadata:
+  name: config-management
+spec:
+  # clusterName is required and must be unique among all managed clusters
+  clusterName: demo-cluster
+  git:
+    syncRepo: git@github.com:tgaillard1/anthos-demo.git
+    syncBranch: master
+    secretType: ssh
+    policyDir: "."
+EOF
+
+kubectl apply -f config-management.yaml
+
+nomos status to validate --> SYNCED
+
+*********************************************************************
+*********************************************************************
 
 Adding Anthos Service Mesh -- Existing Cluster
 
