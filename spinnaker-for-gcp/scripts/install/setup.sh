@@ -218,9 +218,7 @@ if [ -z "$CLUSTER_EXISTS" ]; then
     --disk-type $GKE_DISK_TYPE --disk-size $GKE_DISK_SIZE --service-account $SA_EMAIL \
     --num-nodes $NODE_COUNT --enable-stackdriver-kubernetes --enable-autoupgrade \
     --identity-namespace=${IDNS} \
-    --enable-stackdriver-kubernetes \
     --labels mesh_id=${MESH_ID} \
-    --scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform" \
     --enable-autorepair --enable-ip-alias --addons HorizontalPodAutoscaling,HttpLoadBalancing \
     "${CLUSTER_SECONDARY_RANGE_NAME:+'--cluster-secondary-range-name' $CLUSTER_SECONDARY_RANGE_NAME}" \
     "${SERVICES_SECONDARY_RANGE_NAME:+'--services-secondary-range-name' $SERVICES_SECONDARY_RANGE_NAME}"
