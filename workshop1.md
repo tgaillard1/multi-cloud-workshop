@@ -468,3 +468,7 @@ Here you'll create your own copy of the `gceme` sample app in [Cloud Source Repo
     ```
 
 Go to --> https://source.cloud.google.com/REPLACE_WITH_YOUR_PROJECT_ID/gceme
+
+
+kubectl create clusterrolebinding jenkins-deploy \
+    --clusterrole=cluster-admin --serviceaccount=default:cd-jenkins

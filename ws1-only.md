@@ -4,20 +4,20 @@ source ./env
 
 Deploy Cluster
 ```
-gcloud beta container clusters create ${CLUSTER_NAME0} \
+gcloud beta container clusters create ${CLUSTER_NAME1} \
     --machine-type=${NODE_SIZE} \
     --num-nodes=${NODE_COUNT} \
     --identity-namespace=${IDNS} \
     --enable-stackdriver-kubernetes \
     --subnetwork=default \
     --labels mesh_id=${MESH_ID} \
-    --zone ${CLUSTER_ZONE0} \
+    --zone ${CLUSTER_ZONE1} \
     --scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform"
 ```
 
 Once that operation completes download the credentials for your cluster using the gcloud CLI and confirm cluster is running:
 ```
-gcloud container clusters get-credentials ${CLUSTER_NAME0} --zone ${CLUSTER_ZONE0}
+gcloud container clusters get-credentials ${CLUSTER_NAME1} --zone ${CLUSTER_ZONE1}
 kubectl get pods
 
 You should see "No resources found"
@@ -151,9 +151,9 @@ export PATH=$PWD/bin:$PATH
 istioctl manifest apply --set profile=asm \
   --set values.global.trustDomain=${IDNS} \
   --set values.global.sds.token.aud=${IDNS} \
-  --set values.nodeagent.env.GKE_CLUSTER_URL=https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE0}/clusters/${CLUSTER_NAME0} \
+  --set values.nodeagent.env.GKE_CLUSTER_URL=https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE1}/clusters/${CLUSTER_NAME1} \
   --set values.global.meshID=${MESH_ID} \
-  --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME0}|${CLUSTER_ZONE0}"
+  --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME1}|${CLUSTER_ZONE1}"
 
 
 kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system
@@ -162,6 +162,7 @@ asmctl validate
 asmctl validate --with-testing-workloads
 
 kubectl label namespace default istio-injection=enabled --overwrite
+
 
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -233,7 +234,7 @@ You will use a custom [values file](https://github.com/kubernetes/helm/blob/mast
 
     ```shell
     export POD_NAME=$(kubectl get pods -l "app.kubernetes.io/component=jenkins-master" -o jsonpath="{.items[0].metadata.name}")
-    kubectl port-forward $POD_NAME 8080:8080 >> /dev/null &
+    kubectl port-forward $POD_NAME 9080:8080 >> /dev/null &
     ```
 
 1. Now, check that the Jenkins Service was created properly:
@@ -334,3 +335,21 @@ Here you'll create your own copy of the `gceme` sample app in [Cloud Source Repo
     ```
 
 Go to --> https://source.cloud.google.com/REPLACE_WITH_YOUR_PROJECT_ID/gceme
+
+```
+cd sample-app
+kubectl create ns production
+kubectl label namespace production istio-injection=enabled --overwrite
+```
+
+
+kubectl --namespace=production apply -f k8s/production
+kubectl --namespace=production apply -f k8s/canary
+kubectl --namespace=production apply -f k8s/services
+
+kubectl --namespace=production scale deployment gceme-frontend-production --replicas=4
+
+kubectl --namespace=production get service gceme-frontend
+
+export FRONTEND_SERVICE_IP=$(kubectl get -o jsonpath="{.status.loadBalancer.ingress[0].ip}"  --namespace=production services gceme-frontend)
+while true; do curl http://$FRONTEND_SERVICE_IP/version; sleep 1;  done

@@ -14,14 +14,14 @@
 # Tools versions
     export ISTIO_VERSION=1.3.2
     export KUBECTX_VERSION=v0.7.0
-    export HELM_VERSION=v2.13.0
+    export HELM_VERSION=v2.14.1
     export HELM_PATH=$WORKDIR/helm-$HELM_VERSION
     export CLUSTER_VERSION=1.15
     export KOPS_VERSION=1.15.0
 
 
 ## Setting variables for GKE
-    export CLUSTER_NAME1=spinnaker
+    export CLUSTER_NAME1=jenkins-ci
     export CLUSTER_NAME2=dev
     export CLUSTER_NAME3=stage
     export CLUSTER_ZONE1=us-central1-a
