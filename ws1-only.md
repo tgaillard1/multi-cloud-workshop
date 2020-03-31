@@ -107,7 +107,7 @@ metadata:
   name: config-management
 spec:
   # clusterName is required and must be unique among all managed clusters
-  clusterName: demo-cluster
+  clusterName: jenkins-ci
   git:
     syncRepo: git@github.com:tgaillard1/anthos-demo.git
     syncBranch: master
@@ -119,12 +119,17 @@ kubectl apply -f config-management.yaml
 
 nomos status to validate --> SYNCED
 
-*********************************************************************
+
 *********************************************************************
 
 Adding Anthos Service Mesh -- Existing Cluster
 
 *********************************************************************
+
+kubectl create clusterrolebinding cluster-admin-binding \
+  --clusterrole=cluster-admin \
+  --user="$(gcloud config get-value core/account)"
+
 
 curl --request POST \
 --header "Authorization: Bearer $(gcloud auth print-access-token)" \
@@ -142,6 +147,7 @@ wQfk16sxprI2gOJ2vFFggdq3ixF2h4qNBt0kI7ciDhgpwS8t+/960IsIgw==
 -----END PUBLIC KEY-----
 EOF
 
+cd $WORKDIR/
 tar xzf istio-1.4.6-asm.0-linux.tar.gz
 
 cd $WORKDIR/istio-1.4.6-asm.0

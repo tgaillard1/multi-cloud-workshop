@@ -21,7 +21,7 @@
 
 
 ## Setting variables for GKE
-    export CLUSTER_NAME1=jenkins-ci
+    export CLUSTER_NAME1=jenkins
     export CLUSTER_NAME2=dev
     export CLUSTER_NAME3=stage
     export CLUSTER_ZONE1=us-central1-a
