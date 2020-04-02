@@ -1,23 +1,28 @@
+
+******************************************************
+## Workshop 1 -- CI Jenkins 
+
+
 Create kubernetes Cluster for CI/CD
 ```
 source ./env
 
 Deploy Cluster
 ```
-gcloud beta container clusters create ${CLUSTER_NAME0} \
+gcloud beta container clusters create ${CLUSTER_NAME1} \
     --machine-type=${NODE_SIZE} \
     --num-nodes=${NODE_COUNT} \
     --identity-namespace=${IDNS} \
     --enable-stackdriver-kubernetes \
     --subnetwork=default \
     --labels mesh_id=${MESH_ID} \
-    --zone ${CLUSTER_ZONE0} \
+    --zone ${CLUSTER_ZONE1} \
     --scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform"
 ```
 
 Once that operation completes download the credentials for your cluster using the gcloud CLI and confirm cluster is running:
 ```
-gcloud container clusters get-credentials ${CLUSTER_NAME0} --zone ${CLUSTER_ZONE0}
+gcloud container clusters get-credentials ${CLUSTER_NAME1} --zone ${CLUSTER_ZONE1}
 kubectl get pods
 
 You should see "No resources found"
@@ -31,27 +36,6 @@ https://github.com/GoogleCloudPlatform/gke-anthos-holistic-demo/tree/master/anth
 
 *********************************************************************
 *********************************************************************
-Install terraform gke
-```
-curl -Lo $WORKDIR/gke-tf-linux-amd64 https://github.com/GoogleCloudPlatform/gke-terraform-generator/releases/download/0.1-beta.1/gke-tf-linux-amd64
-chmod 755 $WORKDIR/gke-tf-linux-amd64
-sudo cp $WORKDIR/gke-tf-linux-amd64 /usr/local/bin/gke-tf
-```
-
-```
-gke-tf version
-```
-
-gke-tf version: 0.1-beta.1
-
-
-
-gke-tf gen -d $ANTHOS_DIR/terraform -f $ANTHOS_DIR/gke-tf-demo.yaml -o -p ${PROJECT}
-cd $ANTHOS_DIR/terraform
-terraform init
-terraform plan
-terraform apply -- enter yes when prompted
-
 
 ------------
 Anthos Nomos Install
@@ -85,13 +69,6 @@ nomos init
 git add .
 git commit -m 'Adding initial files for nomos'
 git push origin master
-
-((((((((((()))))))))))
-
-sudo cp gke-tf-linux-amd64 /usr/local/bin/gke-tf
-sudo cp kustomize /usr/local/bin/kustomize
-sudo cp nomos /usr/local/bin/nomos
-
 
 kubectx (to verify cluster)
 
@@ -135,7 +112,7 @@ metadata:
   name: config-management
 spec:
   # clusterName is required and must be unique among all managed clusters
-  clusterName: demo-cluster
+  clusterName: jenkins
   git:
     syncRepo: git@github.com:tgaillard1/anthos-demo.git
     syncBranch: master
@@ -147,30 +124,16 @@ kubectl apply -f config-management.yaml
 
 nomos status to validate --> SYNCED
 
-*********************************************************************
+
 *********************************************************************
 
 Adding Anthos Service Mesh -- Existing Cluster
 
 *********************************************************************
 
-gcloud config set project deft-crawler-225115
-export PROJECT_ID=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
-
-export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
-
-**********************
-Only if you have existing labels
-export EXISTING_LABELS="env=dev,release=stable"
-
-gcloud beta container clusters update ${CLUSTER_NAME} --identity-namespace=${IDNS}
-gcloud beta container clusters update ${CLUSTER_NAME} --enable-stackdriver-kubernetes
-gcloud beta container clusters update ${CLUSTER_NAME} --update-labels mesh_id=${MESH_ID},${EXISTING_LABELS}
-**********************
-
-gcloud beta container clusters update ${CLUSTER_NAME} --identity-namespace=${IDNS}
-gcloud beta container clusters update ${CLUSTER_NAME} --enable-stackdriver-kubernetes
-gcloud beta container clusters update ${CLUSTER_NAME} --update-labels mesh_id=${MESH_ID}
+kubectl create clusterrolebinding cluster-admin-binding \
+  --clusterrole=cluster-admin \
+  --user="$(gcloud config get-value core/account)"
 
 
 curl --request POST \
@@ -178,105 +141,31 @@ curl --request POST \
 --data '' \
 https://meshconfig.googleapis.com/v1alpha1/projects/${PROJECT_ID}:initialize
 
-gcloud container clusters get-credentials ${CLUSTER_NAME}
 
-kubectl create clusterrolebinding cluster-admin-binding \
---clusterrole=cluster-admin \
---user="$(gcloud config get-value core/account)"
+curl -Lo $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz
 
-curl -LO https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz
-
-curl -LO https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz.1.sig
-openssl dgst -verify - -signature istio-1.4.6-asm.0-linux.tar.gz.1.sig istio-1.4.6-asm.0-linux.tar.gz <<'EOF'
+curl -Lo $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz.1.sig https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz.1.sig
+openssl dgst -verify - -signature $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz.1.sig $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz <<'EOF'
 -----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZrGCUaJJr1H8a36sG4UUoXvlXvZ
 wQfk16sxprI2gOJ2vFFggdq3ixF2h4qNBt0kI7ciDhgpwS8t+/960IsIgw==
 -----END PUBLIC KEY-----
 EOF
 
+cd $WORKDIR/
 tar xzf istio-1.4.6-asm.0-linux.tar.gz
 
-cd istio-1.4.6-asm.0
+cd $WORKDIR/istio-1.4.6-asm.0
 
 export PATH=$PWD/bin:$PATH
 
 istioctl manifest apply --set profile=asm \
   --set values.global.trustDomain=${IDNS} \
   --set values.global.sds.token.aud=${IDNS} \
-  --set values.nodeagent.env.GKE_CLUSTER_URL=https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE}/clusters/${CLUSTER_NAME} \
+  --set values.nodeagent.env.GKE_CLUSTER_URL=https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE1}/clusters/${CLUSTER_NAME1} \
   --set values.global.meshID=${MESH_ID} \
-  --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME}|${CLUSTER_ZONE}"
+  --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME1}|${CLUSTER_ZONE1}"
 
-
-kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system
-
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-gcloud services enable \
-    container.googleapis.com \
-    compute.googleapis.com \
-    stackdriver.googleapis.com \
-    meshca.googleapis.com \
-    meshtelemetry.googleapis.com \
-    meshconfig.googleapis.com \
-    iamcredentials.googleapis.com \
-    anthos.googleapis.com
-
-
-
-
-**********************
-Only if you have existing labels
-export EXISTING_LABELS="env=dev,release=stable"
-
-gcloud beta container clusters update ${CLUSTER_NAME} --identity-namespace=${IDNS}
-gcloud beta container clusters update ${CLUSTER_NAME} --enable-stackdriver-kubernetes
-gcloud beta container clusters update ${CLUSTER_NAME} --update-labels mesh_id=${MESH_ID},${EXISTING_LABELS}
-**********************
-
-gcloud beta container clusters update ${CLUSTER_NAME} --identity-namespace=${IDNS}
-gcloud beta container clusters update ${CLUSTER_NAME} --enable-stackdriver-kubernetes
-gcloud beta container clusters update ${CLUSTER_NAME} --update-labels mesh_id=${MESH_ID}
-
-
-```
-curl --request POST \
-  --header "Authorization: Bearer $(gcloud auth print-access-token)" \
-  --data '' \
-  https://meshconfig.googleapis.com/v1alpha1/projects/${PROJECT_ID}:initialize
-```
-
-
-```
-kubectl create clusterrolebinding cluster-admin-binding \
-  --clusterrole=cluster-admin \
-  --user="$(gcloud config get-value core/account)"
-```
-
-Download the Anthos Service Mesh installation file to your current working directory:
-
-curl -LO https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz
-
-
-curl -LO https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz.1.sig
-openssl dgst -verify - -signature istio-1.4.6-asm.0-linux.tar.gz.1.sig istio-1.4.6-asm.0-linux.tar.gz <<'EOF'
------BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZrGCUaJJr1H8a36sG4UUoXvlXvZ
-wQfk16sxprI2gOJ2vFFggdq3ixF2h4qNBt0kI7ciDhgpwS8t+/960IsIgw==
------END PUBLIC KEY-----
-EOF
-
-tar xzf istio-1.4.6-asm.0-linux.tar.gz
-
-cd istio-1.4.6-asm.0
-export PATH=$PWD/bin:$PATH
-
-istioctl manifest apply --set profile=asm \
-  --set values.global.trustDomain=${IDNS} \
-  --set values.global.sds.token.aud=${IDNS} \
-  --set values.nodeagent.env.GKE_CLUSTER_URL=https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE}/clusters/${CLUSTER_NAME} \
-  --set values.global.meshID=${MESH_ID} \
-  --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME}|${CLUSTER_ZONE}"
 
 kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system
 
@@ -284,6 +173,7 @@ asmctl validate
 asmctl validate --with-testing-workloads
 
 kubectl label namespace default istio-injection=enabled --overwrite
+
 
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -295,23 +185,12 @@ kubectl label namespace default istio-injection=enabled --overwrite
 
 In this lab, you will use Helm to install Jenkins from the Charts repository. Helm is a package manager that makes it easy to configure and deploy Kubernetes applications.  Once you have Jenkins installed, you'll be able to set up your CI/CD pipleline.
 
-1. Download and install the helm binary
+1. Download and install the helm binary -- Unzip the file to your local system:
 
     ```
-    wget https://storage.googleapis.com/kubernetes-helm/helm-v2.14.1-linux-amd64.tar.gz
-    ```
-
-1. Unzip the file to your local system:
-
-    ```
-    tar zxfv helm-v2.14.1-linux-amd64.tar.gz
-    cp linux-amd64/helm .
-    ```
-
-1. Add yourself as a cluster administrator in the cluster's RBAC so that you can give Jenkins permissions in the cluster:
-    
-    ```
-    kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$(gcloud config get-value account)
+    wget https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz -P $WORKDIR/
+    tar -xvzf $WORKDIR/helm-$HELM_VERSION-linux-amd64.tar.gz -C $WORKDIR/ 
+    mv $WORKDIR/linux-amd64 $HELM_PATH
     ```
 
 1. Grant Tiller, the server side of Helm, the cluster-admin role in your cluster:
@@ -324,15 +203,14 @@ In this lab, you will use Helm to install Jenkins from the Charts repository. He
 1. Initialize Helm. This ensures that the server side of Helm (Tiller) is properly installed in your cluster.
 
     ```
-    ./helm init --service-account=tiller
-    ./helm update
-    sudo cp helm /usr/local/bin/helm
+    helm init --service-account=tiller
+    helm update
     ```
 
 1. Ensure Helm is properly installed by running the following command. You should see versions appear for both the server and the client of ```v2.14.1```:
 
     ```shell
-    ./helm version
+    helm version
     Client: &version.Version{SemVer:"v2.14.1", GitCommit:"5270352a09c7e8b6e8c9593002a73535276507c0", GitTreeState:"clean"}
     Server: &version.Version{SemVer:"v2.14.1", GitCommit:"5270352a09c7e8b6e8c9593002a73535276507c0", GitTreeState:"clean"}
     ```
@@ -344,7 +222,7 @@ You will use a custom [values file](https://github.com/kubernetes/helm/blob/mast
 1. Use the Helm CLI to deploy the chart with your configuration set.
 
     ```shell
-    ./helm install -n cd stable/jenkins -f jenkins/values.yaml --version 1.2.2 --wait
+    helm install -n cd stable/jenkins -f $BASE_DIR/continuous-integration-on-kubernetes/jenkins/values.yaml --version 1.2.2 --wait
     ```
 
 1. Once that command completes ensure the Jenkins pod goes to the `Running` state and the container is in the `READY` state:
@@ -358,7 +236,7 @@ You will use a custom [values file](https://github.com/kubernetes/helm/blob/mast
 1. Configure the Jenkins service account to be able to deploy to the cluster. 
 
     ```shell
-    $ kubectl create clusterrolebinding jenkins-deploy --clusterrole=cluster-admin --serviceaccount=default:cd-jenkins
+    kubectl create clusterrolebinding jenkins-deploy --clusterrole=cluster-admin --serviceaccount=default:cd-jenkins
 
     clusterrolebinding.rbac.authorization.k8s.io/jenkins-deploy created
     ```
@@ -450,6 +328,7 @@ Here you'll create your own copy of the `gceme` sample app in [Cloud Source Repo
     $ git config credential.helper gcloud.sh
     $ gcloud source repos create gceme
     $ git remote add origin https://source.developers.google.com/p/REPLACE_WITH_YOUR_PROJECT_ID/r/gceme
+    git remote add origin https://source.developers.google.com/p/tgproject1-221717/r/gceme
     ```
     
 1. Ensure git is able to identify you:
@@ -469,6 +348,20 @@ Here you'll create your own copy of the `gceme` sample app in [Cloud Source Repo
 
 Go to --> https://source.cloud.google.com/REPLACE_WITH_YOUR_PROJECT_ID/gceme
 
+```
+cd sample-app
+kubectl create ns production
+kubectl label namespace production istio-injection=enabled --overwrite
+```
 
-kubectl create clusterrolebinding jenkins-deploy \
-    --clusterrole=cluster-admin --serviceaccount=default:cd-jenkins
+
+kubectl --namespace=production apply -f k8s/production
+kubectl --namespace=production apply -f k8s/canary
+kubectl --namespace=production apply -f k8s/services
+
+kubectl --namespace=production scale deployment gceme-frontend-production --replicas=4
+
+kubectl --namespace=production get service gceme-frontend
+
+export FRONTEND_SERVICE_IP=$(kubectl get -o jsonpath="{.status.loadBalancer.ingress[0].ip}"  --namespace=production services gceme-frontend)
+while true; do curl http://$FRONTEND_SERVICE_IP/version; sleep 1;  done

@@ -28,10 +28,19 @@ git config --global user.name \
 PROJECT_ID=tgproject1-221717 \
     $BASE_DIR/spinnaker-for-gcp/scripts/install/setup_properties.sh
 
+cat /home/tgaillard/cloudshell_open/spinnaker-for-gcp/scripts/install/properties | \
+  sed -i 's/spinnaker-1/spinnaker1/g' /home/tgaillard/cloudshell_open/spinnaker-for-gcp/scripts/install/properties 
+
+  sed -i 's/old-text/new-text/g' i
+
+
 PROJECT_ID=tgproject1-221717 \
     /home/tgaillard/cloudshell_open/spinnaker-for-gcp/scripts/install/setup_properties.sh
 
+sed -i 's/spinnaker-1/spinnaker1/g' /home/tgaillard/cloudshell_open/spinnaker-for-gcp/scripts/install/properties 
+
 /home/tgaillard/cloudshell_open/spinnaker-for-gcp/scripts/install/setup.sh
+
 
 source ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties
 source ./env
@@ -90,10 +99,12 @@ gcloud beta container clusters update $GKE_CLUSTER --update-labels mesh_id=${MES
 kubectx ${CLUSTER_NAME2}=gke_${PROJECT_ID}_${CLUSTER_ZONE2}_${CLUSTER_NAME2}
 kubectx ${CLUSTER_NAME3}=gke_${PROJECT_ID}_${CLUSTER_ZONE3}_${CLUSTER_NAME3}
 
+User Admin binding
+
 kubectl create clusterrolebinding user-admin-binding \
     --clusterrole=cluster-admin \
     --user=$(gcloud config get-value account) \
-    --context gke_tgproject1-221717_us-east1-c_spinnaker-1
+    --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
 
 
 kubectl create clusterrolebinding user-admin-binding \
@@ -105,10 +116,12 @@ kubectl create clusterrolebinding user-admin-binding \
     --user=$(gcloud config get-value account) \
     --context ${CLUSTER_NAME3}
 
+Cluster Admin binding
+
 kubectl create clusterrolebinding cluster-admin-binding \
   --clusterrole cluster-admin \
   --user=$(gcloud config get-value account) \
-  --context gke_tgproject1-221717_us-east1-c_spinnaker-1
+  --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
 
 kubectl create clusterrolebinding cluster-admin-binding \
   --clusterrole cluster-admin \
@@ -136,6 +149,9 @@ gsutil cp gs://config-management-release/released/latest/linux_amd64/nomos $WORK
 chmod +x $WORKDIR/nomos
 sudo cp $WORKDIR/nomos /usr/local/bin/nomos
 
+
+cd $WORKDIR
+
 opsys=linux
 curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |\
   grep browser_download |\
@@ -143,8 +159,9 @@ curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |
   cut -d '"' -f 4 |\
   xargs curl -L -o kustomize
 
-sudo chmod +x kustomize
-sudo cp kustomize /usr/local/bin/kustomize
+sudo chmod +x $WORKDIR/kustomize
+sudo cp $WORKDIR/kustomize /usr/local/bin/kustomize
+
 
 *******************************
 Create and link Repo
@@ -170,14 +187,14 @@ Demo uses the altostrat GSR account -- this is for GIT
 ssh-keygen -t rsa -b 4096 \
  -C "tgaillard1" \
  -N '' \
- -f /home/tgaillard/.ssh/anthos-demo-key
+ -f ${HOME}/.ssh/anthos-demo-key
 
 ---------------------
 Add deployment key to GIT repo
 Go to Git -- Repo --> anthos-demo --> settings --> Deploy keys --> Add deploy key
 
 
-cat /home/tgaillard/.ssh/anthos-demo-key.pub
+cat ${HOME}/.ssh/anthos-demo-key.pub
 
 copy contents and add with --> Allow write access
 ---------------------
@@ -185,55 +202,69 @@ copy contents and add with --> Allow write access
 
 *******************************
 
-kubectl create clusterrolebinding cluster-admin-binding \
-  --clusterrole cluster-admin \
-  --user=$(gcloud config get-value account) \
-  --context gke_tgproject1-221717_us-east1-c_spinnaker-1
-
-kubectl create clusterrolebinding cluster-admin-binding \
-  --clusterrole cluster-admin \
-  --user=$(gcloud config get-value account) \
-    --context ${CLUSTER_NAME2}
-
-kubectl create clusterrolebinding cluster-admin-binding \
-  --clusterrole cluster-admin \
-  --user=$(gcloud config get-value account) \
-    --context ${CLUSTER_NAME3}
-
 gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml $BASE_DIR/config-management-operator.yaml
 
-kubectl apply -f config-management-operator.yaml --context=gke_tgproject1-221717_us-east1-c_spinnaker-1
-kubectl apply -f config-management-operator.yaml --context ${CLUSTER_NAME2}
+kubectl apply -f $BASE_DIR/config-management-operator.yaml --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+kubectl apply -f $BASE_DIR/config-management-operator.yaml --context ${CLUSTER_NAME2}
 kubectl apply -f $BASE_DIR/config-management-operator.yaml --context ${CLUSTER_NAME3}
 
 
 
 kubectl create secret generic git-creds \
 --namespace=config-management-system \
---context=gke_tgproject1-221717_us-east1-c_spinnaker-1
---from-file=ssh=/home/tgaillard/.ssh/anthos-demo-key
+--context=gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER} \
+--from-file=ssh=${HOME}/.ssh/anthos-demo-key
 
 kubectl create secret generic git-creds \
 --namespace=config-management-system \
---context ${CLUSTER_NAME2} \
---from-file=ssh=/home/tgaillard/.ssh/anthos-demo-key
+--context=${CLUSTER_NAME2} \
+--from-file=ssh=${HOME}/.ssh/anthos-demo-key
 
 kubectl create secret generic git-creds \
 --namespace=config-management-system \
---context ${CLUSTER_NAME3} \
---from-file=ssh=/home/tgaillard/.ssh/anthos-demo-key
+--context=${CLUSTER_NAME3} \
+--from-file=ssh=${HOME}/.ssh/anthos-demo-key
 
 
 # config-management.yaml
 
-cat > $BASE_DIR/config-management.yaml <<EOF
+----
+Spinnaker Cluster
+
+kubectx gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+
+cat > $BASE_DIR/config-management-${GKE_CLUSTER}.yaml <<EOF
 apiVersion: configmanagement.gke.io/v1
 kind: ConfigManagement
 metadata:
   name: config-management
 spec:
   # clusterName is required and must be unique among all managed clusters
-  clusterName: stage
+  clusterName: ${GKE_CLUSTER}
+  git:
+    syncRepo: git@github.com:tgaillard1/anthos-demo.git
+    syncBranch: master
+    secretType: ssh
+    policyDir: "."
+EOF
+
+kubectl apply -f $BASE_DIR/config-management-${GKE_CLUSTER}.yaml --context=gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+
+nomos status to validate | grep ${GKE_CLUSTER} --> SYNCED
+
+----
+Dev Cluster
+
+kubectx ${CLUSTER_NAME2}
+
+cat > $BASE_DIR/config-management-${CLUSTER_NAME2}.yaml <<EOF
+apiVersion: configmanagement.gke.io/v1
+kind: ConfigManagement
+metadata:
+  name: config-management
+spec:
+  # clusterName is required and must be unique among all managed clusters
+  clusterName: ${CLUSTER_NAME2}
   git:
     syncRepo: git@github.com:tgaillard1/anthos-demo.git
     syncBranch: master
@@ -242,13 +273,35 @@ spec:
 EOF
 
 
+kubectl apply -f $BASE_DIR/config-management-${CLUSTER_NAME2}.yaml --context=${CLUSTER_NAME2}
 
-kubectl apply -f config-management.yaml --context ${CLUSTER_NAME2}
+nomos status to validate | grep ${CLUSTER_NAME2} --> SYNCED
+
+----
+Stage Cluster
+
+kubectx ${CLUSTER_NAME3}
+
+cat > $BASE_DIR/config-management-${CLUSTER_NAME3}.yaml <<EOF
+apiVersion: configmanagement.gke.io/v1
+kind: ConfigManagement
+metadata:
+  name: config-management
+spec:
+  # clusterName is required and must be unique among all managed clusters
+  clusterName: ${CLUSTER_NAME3}
+  git:
+    syncRepo: git@github.com:tgaillard1/anthos-demo.git
+    syncBranch: master
+    secretType: ssh
+    policyDir: "."
+EOF
 
 
-kubectl apply -f config-management.yaml --context ${CLUSTER_NAME3}
+kubectl apply -f $BASE_DIR/config-management-${CLUSTER_NAME3}.yaml --context=${CLUSTER_NAME3}
 
-nomos status to validate --> SYNCED
+nomos status to validate | grep ${CLUSTER_NAME3} --> SYNCED
+
 
 *********************************************************************
 *********************************************************************
@@ -284,16 +337,15 @@ export PATH=$PWD/bin:$PATH
 istioctl manifest apply --set profile=asm \
   --set values.global.trustDomain=${IDNS} \
   --set values.global.sds.token.aud=${IDNS} \
-  --set values.nodeagent.env.GKE_CLUSTER_URL=https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${ZONE}/clusters/spinnaker-1 \
+  --set values.nodeagent.env.GKE_CLUSTER_URL="https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${ZONE}/clusters/${GKE_CLUSTER}" \
   --set values.global.meshID=${MESH_ID} \
-  --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|spinnaker-1|${ZONE}"
-
+  --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${GKE_CLUSTER}|${ZONE}"
 
 
 istioctl manifest apply --set profile=asm \
   --set values.global.trustDomain=${IDNS} \
   --set values.global.sds.token.aud=${IDNS} \
-  --set values.nodeagent.env.GKE_CLUSTER_URL=https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE2}/clusters/${CLUSTER_NAME2} \
+  --set values.nodeagent.env.GKE_CLUSTER_URL="https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE2}/clusters/${CLUSTER_NAME2}" \
   --set values.global.meshID=${MESH_ID} \
   --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME2}|${CLUSTER_ZONE2}"
 
@@ -301,41 +353,52 @@ istioctl manifest apply --set profile=asm \
   istioctl manifest apply --set profile=asm \
   --set values.global.trustDomain=${IDNS} \
   --set values.global.sds.token.aud=${IDNS} \
-  --set values.nodeagent.env.GKE_CLUSTER_URL=https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE3}/clusters/${CLUSTER_NAME3} \
+  --set values.nodeagent.env.GKE_CLUSTER_URL="https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE3}/clusters/${CLUSTER_NAME3}" \
   --set values.global.meshID=${MESH_ID} \
   --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME3}|${CLUSTER_ZONE3}"
 
 
-kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system
+kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context=${CLUSTER_NAME2}
+kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context=${CLUSTER_NAME3}
 
 asmctl validate
 asmctl validate --with-testing-workloads
 
-kubectl label namespace default istio-injection=enabled --overwrite
+kubectl label namespace default istio-injection=enabled --overwrite --context=gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+kubectl label namespace default istio-injection=enabled --overwrite --context=${CLUSTER_NAME2}
+kubectl label namespace default istio-injection=enabled --overwrite --context=${CLUSTER_NAME3}
 
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-kubectx dev
+kubectx ${CLUSTER_NAME2}
 
 ~/cloudshell_open/spinnaker-for-gcp/scripts/manage/add_gke_account.sh
 
-kubectl config use-context gke_${DEVSHELL_PROJECT_ID}_${ZONE}_spinnaker-1
+Enter your currnt context (use default)
+Enter your PROJECT_ID
+Enter Spinnaker account name (use default)
+
+kubectl config use-context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
 
 ~/cloudshell_open/spinnaker-for-gcp/scripts/manage/push_and_apply.sh
 
 switch back to stage context and repeat
 
-kubectx stage
+-----
+kubectx ${CLUSTER_NAME3}
 
 ~/cloudshell_open/spinnaker-for-gcp/scripts/manage/add_gke_account.sh
 
-kubectl config use-context gke_${DEVSHELL_PROJECT_ID}_${ZONE}_spinnaker-1
+Enter your currnt context (use default)
+Enter your PROJECT_ID
+Enter Spinnaker account name (use default)
+
+kubectl config use-context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
 
 ~/cloudshell_open/spinnaker-for-gcp/scripts/manage/push_and_apply.sh
 
-
-~/cloudshell_open/spinnaker-for-gcp/scripts/expose/configure_endpoint.sh
 
 export DECK_POD=$(kubectl get pods --namespace spinnaker -l "cluster=spin-deck" \
     -o jsonpath="{.items[0].metadata.name}")
