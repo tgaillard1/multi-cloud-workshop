@@ -1,6 +1,4 @@
-
-******************************************************
-## Workshop 1 -- CI Jenkins 
+#   Workshop 1 -- CI Jenkins 
 
 
 Create kubernetes Cluster for CI/CD
