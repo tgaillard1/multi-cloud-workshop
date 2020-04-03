@@ -180,7 +180,9 @@ chmod +x $WORKDIR/nomos
 sudo cp $WORKDIR/nomos /usr/local/bin/nomos
 ```
 
+```
 cd $WORKDIR
+```
 
 Install Kustomize
 ```
@@ -212,6 +214,7 @@ cd anthos-demo/
 nomos init
 ```
 
+```
 git add .
 git commit -m 'Adding initial files for nomos'
 git push origin master
@@ -233,8 +236,6 @@ cat ${HOME}/.ssh/anthos-demo-key.pub
 
 copy contents and add with --> Allow write access
 
-
-
 ```
 gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml $BASE_DIR/config-management-operator.yaml
 ```
@@ -245,12 +246,14 @@ kubectl apply -f $BASE_DIR/config-management-operator.yaml --context ${CLUSTER_N
 kubectl apply -f $BASE_DIR/config-management-operator.yaml --context ${CLUSTER_NAME3}
 ```
 
-
+```
 kubectl create secret generic git-creds \
 --namespace=config-management-system \
 --context=gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER} \
 --from-file=ssh=${HOME}/.ssh/anthos-demo-key
+```
 
+```
 kubectl create secret generic git-creds \
 --namespace=config-management-system \
 --context=${CLUSTER_NAME2} \
@@ -260,13 +263,12 @@ kubectl create secret generic git-creds \
 --namespace=config-management-system \
 --context=${CLUSTER_NAME3} \
 --from-file=ssh=${HOME}/.ssh/anthos-demo-key
+```
 
+### Create Config Management for Kubernetes
 
-# config-management.yaml
-
-----
 Spinnaker Cluster
-
+---
 kubectx gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
 
 cat > $BASE_DIR/config-management-${GKE_CLUSTER}.yaml <<EOF
@@ -288,9 +290,9 @@ kubectl apply -f $BASE_DIR/config-management-${GKE_CLUSTER}.yaml --context=gke_$
 
 nomos status to validate | grep ${GKE_CLUSTER} --> SYNCED
 
-----
+---
 Dev Cluster
-
+---
 kubectx ${CLUSTER_NAME2}
 
 cat > $BASE_DIR/config-management-${CLUSTER_NAME2}.yaml <<EOF
@@ -315,6 +317,7 @@ nomos status to validate | grep ${CLUSTER_NAME2} --> SYNCED
 
 ----
 Stage Cluster
+---
 
 kubectx ${CLUSTER_NAME3}
 
