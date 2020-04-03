@@ -2,7 +2,7 @@
 
 ![Workshop 1 Screenshot](images/jenkins-cd-container-engine.png?raw=true "Workshop 1 Diagram")
 
-### Create kubernetes Cluster for CI/CD
+### Create kubernetes Cluster for CI
 
 Get/CD into source code
 
