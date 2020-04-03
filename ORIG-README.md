@@ -1,3 +1,7 @@
+<walkthrough-editor-spotlight spotlightId="navigator" filePath="/home/tgaillard/multi-cloud-workshop/ORIG-README.md"
+                              text="My file">
+</walkthrough-editor-spotlight>
+
 #   Multi-Cloud Workshop -- NOTE -- Work in progress -- Not complete 
 ### Reference Implementation
 
