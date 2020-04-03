@@ -1,5 +1,5 @@
 #   Multi-Cloud Workshop -- AI/ML -- Anthos
-### Reference Implementation
+## Reference Architecture
 
 ![Workshop Screenshot](images/multi-cloud-workshop.png?raw=true "Workshop Diagram")
 
