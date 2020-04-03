@@ -11,22 +11,42 @@
 Set Project and Zone
 ```
 gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID 
-gcloud config set compute/zone YOUR_ZONE
 ```
 
 Create Spinnaker Home
+
+Get/CD into source code
+
 ```
+git clone https://github.com/tgaillard1/multi-cloud-workshop.git
+cd ~/multi-cloud-workshop
 source ./env
-
-cd $SPINNAKER_DIR
 ```
 
+Enable API's
+
+```
+gcloud services enable \
+    container.googleapis.com \
+    compute.googleapis.com \
+    stackdriver.googleapis.com \
+    meshca.googleapis.com \
+    meshtelemetry.googleapis.com \
+    meshconfig.googleapis.com \
+    iamcredentials.googleapis.com \
+    anthos.googleapis.com
+```
+
+### Install Helm
+```
 HELM_VERSION=v2.14.1
 HELM_PATH="$WORKDIR"/helm-"$HELM_VERSION"
 wget https://storage.googleapis.com/kubernetes-helm/helm-"$HELM_VERSION"-linux-amd64.tar.gz
 tar -xvzf helm-"$HELM_VERSION"-linux-amd64.tar.gz
 mv linux-amd64 "$HELM_PATH"
+```
 
+```
 gcloud container clusters create spinnaker --zone us-west2-a \
     --num-nodes 4 --machine-type n1-standard-2 --async
 gcloud container clusters create west --zone us-west2-b \
