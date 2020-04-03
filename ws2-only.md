@@ -268,9 +268,12 @@ kubectl create secret generic git-creds \
 ### Create Config Management for Kubernetes
 
 Spinnaker Cluster
----
-kubectx gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
 
+```
+kubectx gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+```
+
+```
 cat > $BASE_DIR/config-management-${GKE_CLUSTER}.yaml <<EOF
 apiVersion: configmanagement.gke.io/v1
 kind: ConfigManagement
@@ -285,16 +288,22 @@ spec:
     secretType: ssh
     policyDir: "."
 EOF
+```
 
+```
 kubectl apply -f $BASE_DIR/config-management-${GKE_CLUSTER}.yaml --context=gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+```
 
+```
 nomos status to validate | grep ${GKE_CLUSTER} --> SYNCED
+```
 
----
 Dev Cluster
----
+```
 kubectx ${CLUSTER_NAME2}
+```
 
+```
 cat > $BASE_DIR/config-management-${CLUSTER_NAME2}.yaml <<EOF
 apiVersion: configmanagement.gke.io/v1
 kind: ConfigManagement
@@ -309,18 +318,23 @@ spec:
     secretType: ssh
     policyDir: "."
 EOF
+```
 
-
+```
 kubectl apply -f $BASE_DIR/config-management-${CLUSTER_NAME2}.yaml --context=${CLUSTER_NAME2}
+```
 
+```
 nomos status to validate | grep ${CLUSTER_NAME2} --> SYNCED
+```
 
-----
 Stage Cluster
----
 
+```
 kubectx ${CLUSTER_NAME3}
+```
 
+```
 cat > $BASE_DIR/config-management-${CLUSTER_NAME3}.yaml <<EOF
 apiVersion: configmanagement.gke.io/v1
 kind: ConfigManagement
@@ -335,23 +349,30 @@ spec:
     secretType: ssh
     policyDir: "."
 EOF
+```
 
-
+```
 kubectl apply -f $BASE_DIR/config-management-${CLUSTER_NAME3}.yaml --context=${CLUSTER_NAME3}
+```
 
+```
 nomos status to validate | grep ${CLUSTER_NAME3} --> SYNCED
+```
 
 ## Adding Anthos Service Mesh 
 
-
+```
 curl --request POST \
 --header "Authorization: Bearer $(gcloud auth print-access-token)" \
 --data '' \
 https://meshconfig.googleapis.com/v1alpha1/projects/${PROJECT_ID}:initialize
+```
 
-
+```
 curl -Lo $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz
+```
 
+```
 curl -Lo $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz.1.sig https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz.1.sig
 openssl dgst -verify - -signature $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz.1.sig $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz <<'EOF'
 -----BEGIN PUBLIC KEY-----
@@ -359,109 +380,146 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZrGCUaJJr1H8a36sG4UUoXvlXvZ
 wQfk16sxprI2gOJ2vFFggdq3ixF2h4qNBt0kI7ciDhgpwS8t+/960IsIgw==
 -----END PUBLIC KEY-----
 EOF
+```
 
+```
 cd $WORKDIR/
+```
 
+```
 tar xzf istio-1.4.6-asm.0-linux.tar.gz
+```
 
+```
 cd $WORKDIR/istio-1.4.6-asm.0
+```
 
+```
 export PATH=$PWD/bin:$PATH
+```
 
+```
 istioctl manifest apply --set profile=asm \
   --set values.global.trustDomain=${IDNS} \
   --set values.global.sds.token.aud=${IDNS} \
   --set values.nodeagent.env.GKE_CLUSTER_URL="https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${ZONE}/clusters/${GKE_CLUSTER}" \
   --set values.global.meshID=${MESH_ID} \
   --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${GKE_CLUSTER}|${ZONE}"
+```
 
-
+```
 istioctl manifest apply --set profile=asm \
   --set values.global.trustDomain=${IDNS} \
   --set values.global.sds.token.aud=${IDNS} \
   --set values.nodeagent.env.GKE_CLUSTER_URL="https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE2}/clusters/${CLUSTER_NAME2}" \
   --set values.global.meshID=${MESH_ID} \
   --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME2}|${CLUSTER_ZONE2}"
+```
 
-
+```
   istioctl manifest apply --set profile=asm \
   --set values.global.trustDomain=${IDNS} \
   --set values.global.sds.token.aud=${IDNS} \
   --set values.nodeagent.env.GKE_CLUSTER_URL="https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE3}/clusters/${CLUSTER_NAME3}" \
   --set values.global.meshID=${MESH_ID} \
   --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME3}|${CLUSTER_ZONE3}"
+```
 
-
+```
 kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
 kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context=${CLUSTER_NAME2}
 kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context=${CLUSTER_NAME3}
+```
 
+```
 asmctl validate
 asmctl validate --with-testing-workloads
+```
 
+```
 kubectl label namespace default istio-injection=enabled --overwrite --context=gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
 kubectl label namespace default istio-injection=enabled --overwrite --context=${CLUSTER_NAME2}
 kubectl label namespace default istio-injection=enabled --overwrite --context=${CLUSTER_NAME3}
+```
 
-
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
+```
 kubectx ${CLUSTER_NAME2}
+```
 
+```
 ~/cloudshell_open/spinnaker-for-gcp/scripts/manage/add_gke_account.sh
+```
 
 Enter your currnt context (use default)
 Enter your PROJECT_ID
 Enter Spinnaker account name (use default)
 
+```
 kubectl config use-context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+```
 
+```
 ~/cloudshell_open/spinnaker-for-gcp/scripts/manage/push_and_apply.sh
+```
 
 switch back to stage context and repeat
 
------
+```
 kubectx ${CLUSTER_NAME3}
+```
 
+```
 ~/cloudshell_open/spinnaker-for-gcp/scripts/manage/add_gke_account.sh
+```
 
 Enter your currnt context (use default)
 Enter your PROJECT_ID
 Enter Spinnaker account name (use default)
 
+```
 kubectl config use-context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+```
 
+```
 ~/cloudshell_open/spinnaker-for-gcp/scripts/manage/push_and_apply.sh
+```
 
 
+```
 export DECK_POD=$(kubectl get pods --namespace spinnaker -l "cluster=spin-deck" \
     -o jsonpath="{.items[0].metadata.name}")
 kubectl port-forward --namespace spinnaker $DECK_POD 8080:9000 >> /dev/null &
+```
 
-***********************************
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-Install AWS Managed account
+## Install AWS Managed account --- TBD
 
 Install AWS CLI
 
+```
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
 sudo ./aws/install
+```
 
+```
 /usr/local/bin/aws --version
+```
 
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ADD AWS -- https://www.spinnaker.io/setup/install/providers/kubernetes-v2/aws-eks/
 
+```
 curl -O https://d3079gxvs8ayeg.cloudfront.net/templates/managed.yaml  
+```
 
+```
 aws cloudformation deploy --stack-name spinnaker-managed-infrastructure-setup --template-file managed.yaml \
 --parameter-overrides AuthArn=$AUTH_ARN ManagingAccountId=$MANAGING_ACCOUNT_ID --capabilities CAPABILITY_NAMED_IAM
-
+```
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-***********************************
 
 Can use downloaded Ford Sample App $BASE_DIR/continuous-integration-on-kubernetes/sample-app
 ++++++++++++
