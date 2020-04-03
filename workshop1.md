@@ -1,5 +1,6 @@
 #   Workshop 1 -- CI Jenkins 
 
+![Workshop 1 Screenshot](images/jenkins-cd-container-engine.svg?raw=true "Workshop 1 Diagram")
 
 ### Create kubernetes Cluster for CI/CD
 
