@@ -1,8 +1,6 @@
 ******************************************************
 ## Workshop 2 -- CD Spinnaker
-
 ![Workshop 1 Screenshot](images/spinnaker-cd.png?raw=true "Workshop 2 Diagram")
-
 ### Prerequisites
 ------
 1. A Google Cloud Platform Account
