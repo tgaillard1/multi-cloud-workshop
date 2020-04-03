@@ -1,7 +1,7 @@
 ******************************************************
 ## Workshop 2 -- CD Spinnaker
 
-![Workshop 1 Screenshot](images/ws2-diagram.png?raw=true "Workshop 2 Diagram")
+![Workshop 1 Screenshot](images/spinnaker-cd.png?raw=true "Workshop 2 Diagram")
 
 ### Prerequisites
 ------
@@ -340,13 +340,8 @@ kubectl apply -f $BASE_DIR/config-management-${CLUSTER_NAME3}.yaml --context=${C
 
 nomos status to validate | grep ${CLUSTER_NAME3} --> SYNCED
 
+## Adding Anthos Service Mesh 
 
-*********************************************************************
-*********************************************************************
-
-Adding Anthos Service Mesh -- Existing Cluster
-
-*********************************************************************
 
 curl --request POST \
 --header "Authorization: Bearer $(gcloud auth print-access-token)" \
