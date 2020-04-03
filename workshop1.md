@@ -109,8 +109,8 @@ Go to Git -- Repo --> anthos-demo --> settings --> Deploy keys --> Add deploy ke
 cat /home/tgaillard/.ssh/anthos-demo-key.pub
 ```
 
-copy contents and add with --> Allow write access
----------------------
+Copy contents and add with --> Allow write access to GitHub
+
 
 ```
 kubectl create secret generic git-creds \
@@ -118,7 +118,7 @@ kubectl create secret generic git-creds \
 --from-file=ssh=${HOME}/.ssh/anthos-demo-key
 ```
 
-# config-management.yaml
+### Create Config Management for Kubernetes
 
 ```
 cat > $BASE_DIR/config-management-${CLUSTER_NAME1}.yaml  <<EOF
@@ -384,14 +384,21 @@ kubectl create ns production
 kubectl label namespace production istio-injection=enabled --overwrite
 ```
 
-
+```
 kubectl --namespace=production apply -f k8s/production
 kubectl --namespace=production apply -f k8s/canary
 kubectl --namespace=production apply -f k8s/services
+```
 
+```
 kubectl --namespace=production scale deployment gceme-frontend-production --replicas=4
+```
 
+```
 kubectl --namespace=production get service gceme-frontend
+```
 
+```
 export FRONTEND_SERVICE_IP=$(kubectl get -o jsonpath="{.status.loadBalancer.ingress[0].ip}"  --namespace=production services gceme-frontend)
 while true; do curl http://$FRONTEND_SERVICE_IP/version; sleep 1;  done
+```
