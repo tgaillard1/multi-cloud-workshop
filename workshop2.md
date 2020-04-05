@@ -627,12 +627,11 @@ git push --tags
 ```
 
 
-#Verify build is pushed by going to Cloud Build --> History
-```
+Verify build is pushed by going to Cloud Build --> History
 
-******************************************************
-Create a multi-cluster deployment pipeline
-******************************************************
+
+
+### Create a multi-cluster deployment pipeline
 
 Use spin to create an application in Spinnaker:
 
