@@ -1,6 +1,6 @@
 #   Workshop 1 -- CI Jenkins 
 
-![Workshop 1 Screenshot](jenkins-ci-arch.png?raw=true "Workshop 1 Diagram")
+![Workshop 1 Screenshot](images/jenkins-ci-arch.png?raw=true "Workshop 1 Diagram")
 
 ### Create kubernetes Cluster for CI
 
