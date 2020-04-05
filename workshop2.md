@@ -8,19 +8,9 @@
 1. A Google Cloud Platform Account
 1. [Enable the Cloud Build and Cloud Source Repositories APIs](https://console.cloud.google.com/flows/enableapi?apiid=container,cloudbuild.googleapis.com,sourcerepo.googleapis.com&redirect=https://console.cloud.google.com&_ga=2.48886959.843635228.1580750081-768538728.1545413763)
 
-Set Project
+Set Project and Zone
 ```
 gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID 
-```
-
-Create Spinnaker Home
-
-Get/CD into source code
-
-```
-git clone https://github.com/tgaillard1/multi-cloud-workshop.git
-cd ~/multi-cloud-workshop
-source ./env
 ```
 
 Enable API's
@@ -37,90 +27,75 @@ gcloud services enable \
     anthos.googleapis.com
 ```
 
-### Install Helm
+NOTE -- Skip the next step if you have already download the source code from the first workshop (1).
+
+Get Source code
 ```
-HELM_VERSION=v2.14.1
-HELM_PATH="$WORKDIR"/helm-"$HELM_VERSION"
-wget https://storage.googleapis.com/kubernetes-helm/helm-"$HELM_VERSION"-linux-amd64.tar.gz
-tar -xvzf helm-"$HELM_VERSION"-linux-amd64.tar.gz
-mv linux-amd64 "$HELM_PATH"
-```
-
-```
-gcloud container clusters create spinnaker --zone us-west2-a \
-    --num-nodes 4 --machine-type n1-standard-2 --async
-gcloud container clusters create west --zone us-west2-b \
-    --num-nodes 3 --machine-type n1-standard-2 --async
-gcloud container clusters create east --zone us-east4-a \
-    --num-nodes 3 --machine-type n1-standard-2
-
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
-export PROJECT_ID=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
-export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
-export CLUSTER_NAME1=spinnaker
-export CLUSTER_NAME2=west
-export CLUSTER_NAME3=east
-export CLUSTER_ZONE1=us-central1-a
-export CLUSTER_ZONE2=us-west2-b
-export CLUSTER_ZONE3=us-east4-a
-export IDNS=${PROJECT_ID}.svc.id.goog
-export MESH_ID="proj-${PROJECT_NUMBER}"
-
-
-gcloud container clusters create spinnaker --zone us-west2-a \
-    --num-nodes 3 --machine-type n1-standard-2 --async
-
-gcloud container clusters create west --zone us-west2-b \
-    --num-nodes 3 --machine-type n1-standard-2 --async
-
-gcloud container clusters create east --zone us-east4-a \
-    --num-nodes 3 --machine-type n1-standard-2
-
-
-
-
-
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
-
-
-
-
-### Install Helm -- **NOTE --- Skip this step if you have already completed it in Workshop 1**
-------
-```
-wget https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz -P $WORKDIR/
-tar -xvzf $WORKDIR/helm-$HELM_VERSION-linux-amd64.tar.gz -C $WORKDIR/ 
-mv $WORKDIR/linux-amd64 $HELM_PATH
+git clone https://github.com/tgaillard1/multi-cloud-workshop.git
+cd ~/multi-cloud-workshop
+source ./env
 ```
 
-Install kubectx and kubens
+Create Spinnaker and Cluster
+
+New Source 
 ```
-git clone https://github.com/ahmetb/kubectx $WORKDIR/kubectx
-export PATH=$PATH:$WORKDIR/kubectx
+git clone https://github.com/GoogleCloudPlatform/spinnaker-for-gcp.git ~/cloudshell_open/spinnaker-for-gcp
+cd ~/cloudshell_open/spinnaker-for-gcp
 ```
 
-Install Spin
+Or Copy from original
 ```
-curl -Lo $WORKDIR/spin https://storage.googleapis.com/spinnaker-artifacts/spin/1.5.2/linux/amd64/spin
-chmod +x $WORKDIR/spin
+cp -rf $BASE_DIR/spinnaker-for-gcp ~/cloudshell_open/spinnaker-for-gcp
 ```
 
-Create GKE clusters
+Add Git credentials
 ```
-gcloud beta container clusters create ${CLUSTER_NAME1} \
-    --machine-type=${NODE_SIZE} \
-    --num-nodes=${NODE_COUNT} \
-    --identity-namespace=${IDNS} \
-    --enable-stackdriver-kubernetes \
-    --subnetwork=default \
-    --labels mesh_id=${MESH_ID} \
-    --zone ${CLUSTER_ZONE1} \
-    --scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform"
+git config --global user.email \
+    "[EMAIL_ADDRESS]"
+git config --global user.name \
+    "[USERNAME]"
+```
 
+```
+cat ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties | \
+  sed -i 's/spinnaker-1/spinnaker1/g' ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties 
+
+  sed -i 's/old-text/new-text/g' i
+```
+
+Set the Spinnaker variables
+```
+PROJECT_ID=$PROJECT_ID \
+    ~/cloudshell_open/spinnaker-for-gcp/scripts/install/setup_properties.sh
+
+sed -i 's/spinnaker-1/spinnaker1/g' ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties 
+```
+
+Run install for Spinnaker
+```
+~/cloudshell_open/spinnaker-for-gcp/scripts/install/setup.sh
+```
+
+```
+source ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties
+```
+
+Log into new cluster
+```
+gcloud container clusters get-credentials $GKE_CLUSTER --zone $ZONE --project ${PROJECT_ID}
+```
+
+Log into Spinnaker UI
+```
+export DECK_POD=$(kubectl get pods --namespace spinnaker -l "cluster=spin-deck" \
+    -o jsonpath="{.items[0].metadata.name}")
+kubectl port-forward --namespace spinnaker $DECK_POD 9080:9000 >> /dev/null &
+```
+
+### Set up deployment clusters
+
+```
 gcloud beta container clusters create ${CLUSTER_NAME2} \
     --machine-type=${NODE_SIZE} \
     --num-nodes=${NODE_COUNT} \
@@ -140,37 +115,35 @@ gcloud beta container clusters create ${CLUSTER_NAME3} \
     --labels mesh_id=${MESH_ID} \
     --zone ${CLUSTER_ZONE3} \
     --scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform"
-
-
-#Validate they are running
-
-gcloud container clusters list
 ```
 
-Connect to all three clusters 
-```
-gcloud container clusters get-credentials ${CLUSTER_NAME1} --zone ${CLUSTER_ZONE1} --project ${PROJECT_ID}
 
-gcloud container clusters get-credentials spinnaker-1 --zone us-east1-c --project ${PROJECT_ID}
+Connect to clusters
+```
+gcloud container clusters get-credentials $GKE_CLUSTER --zone $ZONE --project ${PROJECT_ID}
 gcloud container clusters get-credentials ${CLUSTER_NAME2} --zone ${CLUSTER_ZONE2} --project ${PROJECT_ID}
 gcloud container clusters get-credentials ${CLUSTER_NAME3} --zone ${CLUSTER_ZONE3} --project ${PROJECT_ID}
 ```
 
-#Rename clusters
-
-kubectx ${CLUSTER_NAME1}=gke_${PROJECT_ID}_${CLUSTER_ZONE1}_${CLUSTER_NAME1}
-kubectx ${CLUSTER_NAME2}=gke_${PROJECT_ID}_${CLUSTER_ZONE2}_${CLUSTER_NAME2}
-kubectx ${CLUSTER_NAME3}=gke_${PROJECT_ID}_${CLUSTER_ZONE3}_${CLUSTER_NAME3}
-
-
+Restart Spinnaker Cluster -- labels
+```
+gcloud beta container clusters update $GKE_CLUSTER --identity-namespace=${IDNS} --zone $ZONE
+gcloud beta container clusters update $GKE_CLUSTER --update-labels mesh_id=${MESH_ID} --zone $ZONE
 ```
 
-Set permissions for cluster-admin
+Rename clusters
+```
+kubectx ${CLUSTER_NAME2}=gke_${PROJECT_ID}_${CLUSTER_ZONE2}_${CLUSTER_NAME2}
+kubectx ${CLUSTER_NAME3}=gke_${PROJECT_ID}_${CLUSTER_ZONE3}_${CLUSTER_NAME3}
+```
+
+User Admin binding
 ```
 kubectl create clusterrolebinding user-admin-binding \
     --clusterrole=cluster-admin \
     --user=$(gcloud config get-value account) \
-    --context ${CLUSTER_NAME1}
+    --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+
 kubectl create clusterrolebinding user-admin-binding \
     --clusterrole=cluster-admin \
     --user=$(gcloud config get-value account) \
@@ -181,373 +154,377 @@ kubectl create clusterrolebinding user-admin-binding \
     --context ${CLUSTER_NAME3}
 ```
 
+Cluster Admin binding
+```
 kubectl create clusterrolebinding cluster-admin-binding \
   --clusterrole cluster-admin \
-  --user="$(gcloud config get-value core/account)"
+  --user=$(gcloud config get-value account) \
+  --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
 
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+kubectl create clusterrolebinding cluster-admin-binding \
+  --clusterrole cluster-admin \
+  --user=$(gcloud config get-value account) \
+    --context ${CLUSTER_NAME2}
+
+kubectl create clusterrolebinding cluster-admin-binding \
+  --clusterrole cluster-admin \
+  --user=$(gcloud config get-value account) \
+    --context ${CLUSTER_NAME3}
+```
+
+## Adding Config Management
+
+
+Anthos Nomos Install
+```
+gsutil cp gs://config-management-release/released/latest/linux_amd64/nomos $WORKDIR/nomos
+chmod +x $WORKDIR/nomos
+sudo cp $WORKDIR/nomos /usr/local/bin/nomos
+```
+
+```
+cd $WORKDIR
+```
+
+Install Kustomize
+```
+opsys=linux
+curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |\
+  grep browser_download |\
+  grep $opsys |\
+  cut -d '"' -f 4 |\
+  xargs curl -L -o kustomize
+
+sudo chmod +x $WORKDIR/kustomize
+sudo cp $WORKDIR/kustomize /usr/local/bin/kustomize
+```
+
+Create and link Repo
+```
+REPO="anthos-demo"
+PROJECT=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
+ACCOUNT=$(gcloud config list --format 'value(core.account)' 2>/dev/null)
+```
+
+```
+cp -rf ~/multi-cloud-workshop/anthos-config-mgmt/ .
+cd anthos-config-mgmt/
+git clone https://github.com/tgaillard1/anthos-demo.git
+nomos init
+ls -lrt
+cd anthos-demo/
+nomos init
+```
+
+```
+git add .
+git commit -m 'Adding initial files for nomos'
+git push origin master
+```
+
+```
+ssh-keygen -t rsa -b 4096 \
+ -C "tgaillard1" \
+ -N '' \
+ -f ${HOME}/.ssh/anthos-demo-key
+```
+
+Add deployment key to GIT repo
+Go to Git -- Repo --> anthos-demo --> settings --> Deploy keys --> Add deploy key
+
+```
+cat ${HOME}/.ssh/anthos-demo-key.pub
+```
+
+copy contents and add with --> Allow write access
+
+```
+gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml $BASE_DIR/config-management-operator.yaml
+```
+
+```
+kubectl apply -f $BASE_DIR/config-management-operator.yaml --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+kubectl apply -f $BASE_DIR/config-management-operator.yaml --context ${CLUSTER_NAME2}
+kubectl apply -f $BASE_DIR/config-management-operator.yaml --context ${CLUSTER_NAME3}
+```
+
+```
+kubectl create secret generic git-creds \
+--namespace=config-management-system \
+--context=gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER} \
+--from-file=ssh=${HOME}/.ssh/anthos-demo-key
+```
+
+```
+kubectl create secret generic git-creds \
+--namespace=config-management-system \
+--context=${CLUSTER_NAME2} \
+--from-file=ssh=${HOME}/.ssh/anthos-demo-key
+
+kubectl create secret generic git-creds \
+--namespace=config-management-system \
+--context=${CLUSTER_NAME3} \
+--from-file=ssh=${HOME}/.ssh/anthos-demo-key
+```
+
+### Create Config Management for Kubernetes
+
+Spinnaker Cluster
+
+```
+kubectx gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+```
+
+```
+cat > $BASE_DIR/config-management-${GKE_CLUSTER}.yaml <<EOF
+apiVersion: configmanagement.gke.io/v1
+kind: ConfigManagement
+metadata:
+  name: config-management
+spec:
+  # clusterName is required and must be unique among all managed clusters
+  clusterName: ${GKE_CLUSTER}
+  git:
+    syncRepo: git@github.com:tgaillard1/anthos-demo.git
+    syncBranch: master
+    secretType: ssh
+    policyDir: "."
+EOF
+```
+
+```
+kubectl apply -f $BASE_DIR/config-management-${GKE_CLUSTER}.yaml --context=gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+```
+
+```
+nomos status to validate | grep ${GKE_CLUSTER} --> SYNCED
+```
+
+Dev Cluster
+```
+kubectx ${CLUSTER_NAME2}
+```
+
+```
+cat > $BASE_DIR/config-management-${CLUSTER_NAME2}.yaml <<EOF
+apiVersion: configmanagement.gke.io/v1
+kind: ConfigManagement
+metadata:
+  name: config-management
+spec:
+  # clusterName is required and must be unique among all managed clusters
+  clusterName: ${CLUSTER_NAME2}
+  git:
+    syncRepo: git@github.com:tgaillard1/anthos-demo.git
+    syncBranch: master
+    secretType: ssh
+    policyDir: "."
+EOF
+```
+
+```
+kubectl apply -f $BASE_DIR/config-management-${CLUSTER_NAME2}.yaml --context=${CLUSTER_NAME2}
+```
+
+```
+nomos status to validate | grep ${CLUSTER_NAME2} --> SYNCED
+```
+
+Stage Cluster
+
+```
+kubectx ${CLUSTER_NAME3}
+```
+
+```
+cat > $BASE_DIR/config-management-${CLUSTER_NAME3}.yaml <<EOF
+apiVersion: configmanagement.gke.io/v1
+kind: ConfigManagement
+metadata:
+  name: config-management
+spec:
+  # clusterName is required and must be unique among all managed clusters
+  clusterName: ${CLUSTER_NAME3}
+  git:
+    syncRepo: git@github.com:tgaillard1/anthos-demo.git
+    syncBranch: master
+    secretType: ssh
+    policyDir: "."
+EOF
+```
+
+```
+kubectl apply -f $BASE_DIR/config-management-${CLUSTER_NAME3}.yaml --context=${CLUSTER_NAME3}
+```
+
+```
+nomos status to validate | grep ${CLUSTER_NAME3} --> SYNCED
+```
+
+## Adding Anthos Service Mesh 
 
 ```
 curl --request POST \
-  --header "Authorization: Bearer $(gcloud auth print-access-token)" \
-  --data '' \
-  https://meshconfig.googleapis.com/v1alpha1/projects/${PROJECT_ID}:initialize
+--header "Authorization: Bearer $(gcloud auth print-access-token)" \
+--data '' \
+https://meshconfig.googleapis.com/v1alpha1/projects/${PROJECT_ID}:initialize
 ```
 
-Download the Anthos Service Mesh installation file to your current working directory:
-
+```
 curl -Lo $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz
+```
 
-
-curl -LO https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz.1.sig
-openssl dgst -verify - -signature istio-1.4.6-asm.0-linux.tar.gz.1.sig istio-1.4.6-asm.0-linux.tar.gz <<'EOF'
+```
+curl -Lo $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz.1.sig https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz.1.sig
+openssl dgst -verify - -signature $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz.1.sig $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz <<'EOF'
 -----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWZrGCUaJJr1H8a36sG4UUoXvlXvZ
 wQfk16sxprI2gOJ2vFFggdq3ixF2h4qNBt0kI7ciDhgpwS8t+/960IsIgw==
 -----END PUBLIC KEY-----
 EOF
+```
 
+```
+cd $WORKDIR/
+```
 
-tar xzf $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz -C $WORKDIR/
+```
+tar xzf istio-1.4.6-asm.0-linux.tar.gz
+```
 
-export PATH=$WORKDIR/istio-1.4.6-asm.0/bin:$PATH
+```
+cd $WORKDIR/istio-1.4.6-asm.0
+```
 
+```
+export PATH=$PWD/bin:$PATH
+```
 
+```
 istioctl manifest apply --set profile=asm \
-  --context ${CLUSTER_NAME1} \
   --set values.global.trustDomain=${IDNS} \
   --set values.global.sds.token.aud=${IDNS} \
-  --set values.nodeagent.env.GKE_CLUSTER_URL=https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE1}/clusters/${CLUSTER_NAME1} \
+  --set values.nodeagent.env.GKE_CLUSTER_URL="https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${ZONE}/clusters/${GKE_CLUSTER}" \
   --set values.global.meshID=${MESH_ID} \
-  --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME1}|${CLUSTER_ZONE1}"
+  --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${GKE_CLUSTER}|${ZONE}"
+```
 
+```
 istioctl manifest apply --set profile=asm \
-  --context ${CLUSTER_NAME2} \
   --set values.global.trustDomain=${IDNS} \
   --set values.global.sds.token.aud=${IDNS} \
-  --set values.nodeagent.env.GKE_CLUSTER_URL=https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE2}/clusters/${CLUSTER_NAME2} \
+  --set values.nodeagent.env.GKE_CLUSTER_URL="https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE2}/clusters/${CLUSTER_NAME2}" \
   --set values.global.meshID=${MESH_ID} \
   --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME2}|${CLUSTER_ZONE2}"
+```
 
-istioctl manifest apply --set profile=asm \
-  --context ${CLUSTER_NAME3} \
+```
+  istioctl manifest apply --set profile=asm \
   --set values.global.trustDomain=${IDNS} \
   --set values.global.sds.token.aud=${IDNS} \
-  --set values.nodeagent.env.GKE_CLUSTER_URL=https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE3}/clusters/${CLUSTER_NAME3} \
+  --set values.nodeagent.env.GKE_CLUSTER_URL="https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE3}/clusters/${CLUSTER_NAME3}" \
   --set values.global.meshID=${MESH_ID} \
   --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME3}|${CLUSTER_ZONE3}"
-
-kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context ${CLUSTER_NAME1}
-kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context ${CLUSTER_NAME2}
-kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context ${CLUSTER_NAME3}
-
-asmctl validate --context ${CLUSTER_NAME1}
-asmctl validate --with-testing-workloads --context ${CLUSTER_NAME1}
-
-kubectl label namespace default istio-injection=enabled --overwrite --context ${CLUSTER_NAME1}
-kubectl label namespace default istio-injection=enabled --overwrite --context ${CLUSTER_NAME2}
-kubectl label namespace default istio-injection=enabled --overwrite --context ${CLUSTER_NAME3}
-
-
-
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
-
-Create Service Account
-```
-gcloud iam service-accounts create ${CLUSTER_NAME1} --display-name ${CLUSTER_NAME1}-service-account
-
-SPINNAKER_SA_EMAIL=$(gcloud iam service-accounts list \
-    --filter="displayName:${CLUSTER_NAME1}-service-account" \
-    --format='value(email)')
 ```
 
-Bind storage.admin and storage.objectAdmin roles
 ```
-gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-    --role roles/storage.admin \
-    --member serviceAccount:${SPINNAKER_SA_EMAIL}
-gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-    --role roles/storage.objectAdmin \
-    --member serviceAccount:${SPINNAKER_SA_EMAIL}
+kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context=${CLUSTER_NAME2}
+kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context=${CLUSTER_NAME3}
 ```
 
-Download Service Account
 ```
-gcloud iam service-accounts keys create $WORKDIR/${CLUSTER_NAME1}-service-account.json --iam-account ${SPINNAKER_SA_EMAIL}
-```
-
-Create Pub/Sub
-```
-gcloud pubsub topics create projects/${PROJECT_ID}/topics/gcr
-
-gcloud pubsub subscriptions create gcr-triggers \
-    --topic projects/${PROJECT_ID}/topics/gcr
-
-gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-    --role roles/pubsub.subscriber \
-    --member serviceAccount:${SPINNAKER_SA_EMAIL}
+asmctl validate
+asmctl validate --with-testing-workloads
 ```
 
-Deploy Spinnaker
 ```
-kubectx spinnaker
-kubectl create serviceaccount tiller --namespace kube-system
-
-
-kubectl label namespace kube-system istio-injection=enabled --overwrite
-
-
-
-kubectl create clusterrolebinding tiller-admin-binding \
-    --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-
-#Deploy Using Helm
-
-${HELM_PATH}/helm init --service-account=tiller
-${HELM_PATH}/helm update
-
-${HELM_PATH}/helm version
+kubectl label namespace default istio-injection=enabled --overwrite --context=gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+kubectl label namespace default istio-injection=enabled --overwrite --context=${CLUSTER_NAME2}
+kubectl label namespace default istio-injection=enabled --overwrite --context=${CLUSTER_NAME3}
 ```
 
-Configure Spinnaker
-#Configure bucket
 ```
-export PROJECT_ID=$(gcloud info --format='value(config.project)')
-export BUCKET=${PROJECT_ID}-spinnaker-config
-gsutil mb -c regional -l us-west2 gs://${BUCKET}
+kubectx ${CLUSTER_NAME2}
 ```
 
-Create configuration file for Spinnaker
 ```
-export SA_JSON=$(cat $WORKDIR/${CLUSTER_NAME1}-service-account.json)
-export PROJECT_ID=$(gcloud info --format='value(config.project)')
-export BUCKET=${PROJECT_ID}-spinnaker-config
-
-cat > spinnaker-config.yaml <<EOF
-gcs:
-  enabled: true
-  bucket: $BUCKET
-  project: $PROJECT_ID
-  jsonKey: '$SA_JSON'
-
-dockerRegistries:
-- name: gcr
-  address: https://gcr.io
-  username: _json_key
-  password: '$SA_JSON'
-  email: 1234@5678.com
-
-# Disable minio as the default storage backend
-minio:
-  enabled: false
-
-jenkins:
-  enabled: false
-
-# Configure Spinnaker to enable GCP services
-halyard:
-  spinnakerVersion: 1.12.5
-  image:
-    tag: 1.16.0
-  additionalScripts:
-    create: true
-    data:
-      enable_gcs_artifacts.sh: |-
-        \$HAL_COMMAND config artifact gcs account add gcs-$PROJECT_ID --json-path /opt/gcs/key.json
-        \$HAL_COMMAND config artifact gcs enable
-      enable_pubsub_triggers.sh: |-
-        \$HAL_COMMAND config pubsub google enable
-        \$HAL_COMMAND config pubsub google subscription add gcr-triggers \
-          --subscription-name gcr-triggers \
-          --json-path /opt/gcs/key.json \
-          --project $PROJECT_ID \
-          --message-format GCR
-EOF
+~/cloudshell_open/spinnaker-for-gcp/scripts/manage/add_gke_account.sh
 ```
 
-Deploy Spinnaker chart
+Enter your currnt context (use default)
+Enter your PROJECT_ID
+Enter Spinnaker account name (use default)
+
 ```
-${HELM_PATH}/helm install -n spin stable/spinnaker -f spinnaker-config.yaml --timeout 600 --version 1.8.1 --wait --debug
+kubectl config use-context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+```
+
+```
+~/cloudshell_open/spinnaker-for-gcp/scripts/manage/push_and_apply.sh
+```
+
+switch back to stage context and repeat
+
+```
+kubectx ${CLUSTER_NAME3}
+```
+
+```
+~/cloudshell_open/spinnaker-for-gcp/scripts/manage/add_gke_account.sh
+```
+
+Enter your currnt context (use default)
+Enter your PROJECT_ID
+Enter Spinnaker account name (use default)
+
+```
+kubectl config use-context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+```
+
+```
+~/cloudshell_open/spinnaker-for-gcp/scripts/manage/push_and_apply.sh
 ```
 
 
-******************************************************
-Adding Kubernetes clusters to Spinnaker
-******************************************************
-
-Create Kubernetes service accounts for Spinnaker
 ```
-cat > spinnaker-sa.yaml <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: spinnaker
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
- name: spinnaker-role
-rules:
-- apiGroups: [""]
-  resources: ["namespaces", "configmaps", "events", "replicationcontrollers", "serviceaccounts", "pods/log"]
-  verbs: ["get", "list"]
-- apiGroups: [""]
-  resources: ["pods", "services", "secrets"]
-  verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
-- apiGroups: ["autoscaling"]
-  resources: ["horizontalpodautoscalers"]
-  verbs: ["list", "get"]
-- apiGroups: ["apps"]
-  resources: ["controllerrevisions", "statefulsets"]
-  verbs: ["list"]
-- apiGroups: ["extensions", "apps"]
-  resources: ["deployments", "replicasets", "ingresses"]
-  verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
-# These permissions are necessary for halyard to operate. We also use this role to deploy Spinnaker.
-- apiGroups: [""]
-  resources: ["services/proxy", "pods/portforward"]
-  verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
- name: spinnaker-role-binding
-roleRef:
- apiGroup: rbac.authorization.k8s.io
- kind: ClusterRole
- name: spinnaker-role
-subjects:
-- namespace: spinnaker
-  kind: ServiceAccount
-  name: spinnaker-service-account
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
- name: spinnaker-service-account
- namespace: spinnaker
-EOF
-```
-
-Apply Kubernetes authentication
-
-```
-kubectl --context ${CLUSTER_NAME2} apply -f spinnaker-sa.yaml
-kubectl --context ${CLUSTER_NAME3} apply -f spinnaker-sa.yaml
-```
-
-Get the CLUSTER_NAME2 and CLUSTER_NAME3 cluster names, and the Kubernetes service account:
-
-```
-DEV_CLUSTER=gke_${PROJECT_ID}_${CLUSTER_ZONE2}_${CLUSTER_NAME2}
-STAGE_CLUSTER=gke_${PROJECT_ID}_${CLUSTER_ZONE3}_${CLUSTER_NAME3}
-DEV_USER=${CLUSTER_NAME2}-spinnaker-service-account
-STAGE_USER=${CLUSTER_NAME3}-spinnaker-service-account
-```
-
-Get the tokens from spinnaker-service-account for both east and west clusters:
-
-```
-WEST_TOKEN=$(kubectl --context west get secret \
-    $(kubectl get serviceaccount spinnaker-service-account \
-    --context west \
-    -n spinnaker \
-    -o jsonpath='{.secrets[0].name}') \
-    -n spinnaker \
-    -o jsonpath='{.data.token}' | base64 --decode)
-EAST_TOKEN=$(kubectl --context east get secret \
-    $(kubectl get serviceaccount spinnaker-service-account \
-    --context east \
-    -n spinnaker \
-    -o jsonpath='{.secrets[0].name}') \
-    -n spinnaker \
-    -o jsonpath='{.data.token}' | base64 --decode)
-```
-
-Get the cluster CA for east and west clusters:
-
-```
-kubectl config view --raw -o json | jq -r '.clusters[] | select(.name == "'$WEST_CLUSTER'") | .cluster."certificate-authority-data"' | base64 -d > west_cluster_ca.crt
-kubectl config view --raw -o json | jq -r '.clusters[] | select(.name == "'$EAST_CLUSTER'") | .cluster."certificate-authority-data"' | base64 -d > east_cluster_ca.crt
-```
-
-Get the Kubernetes API server address for the east and west clusters:
-
-```
-WEST_SERVER=$(kubectl config view --raw -o json | jq -r '.clusters[] | select(.name == "'$WEST_CLUSTER'") | .cluster."server"')
-EAST_SERVER=$(kubectl config view --raw -o json | jq -r '.clusters[] | select(.name == "'$EAST_CLUSTER'") | .cluster."server"')
-```
-
-Create a kubeconfig file for Spinnaker:
-
-```
-KUBECONFIG_FILE=spinnaker-kubeconfig
-```
-
-Populate the spinnaker-kubeconfig file with the east and west clusters by using the values you just retrieved:
-
-```
-kubectl config --kubeconfig=$KUBECONFIG_FILE set-cluster $WEST_CLUSTER \
-    --certificate-authority=$WORKDIR/west_cluster_ca.crt \
-    --embed-certs=true \
-    --server $WEST_SERVER
-kubectl config --kubeconfig=$KUBECONFIG_FILE set-credentials $WEST_USER --token $WEST_TOKEN
-kubectl config --kubeconfig=$KUBECONFIG_FILE set-context west --user $WEST_USER --cluster $WEST_CLUSTER
-kubectl config --kubeconfig=$KUBECONFIG_FILE set-cluster $EAST_CLUSTER \
-    --certificate-authority=$WORKDIR/east_cluster_ca.crt \
-    --embed-certs=true \
-    --server $EAST_SERVER
-kubectl config --kubeconfig=$KUBECONFIG_FILE set-credentials $EAST_USER --token $EAST_TOKEN
-kubectl config --kubeconfig=$KUBECONFIG_FILE set-context east --user $EAST_USER --cluster $EAST_CLUSTER
-```
-
-Create a Kubernetes secret in the spinnaker cluster:
-
-```
-kubectx spinnaker
-kubectl create secret generic --from-file=$WORKDIR/spinnaker-kubeconfig spin-kubeconfig
-```
-
-Update the spinnaker-config.yaml file by appending a section for kubeconfig to add the additional clusters:
-
-```
-cat >> spinnaker-config.yaml <<EOF
-kubeConfig:
-  enabled: true
-  secretName: spin-kubeconfig
-  secretKey: spinnaker-kubeconfig
-  contexts:
-  - east
-  - west
-EOF
-```
-
-Update the Spinnaker helm release:
-
-```
-${HELM_PATH}/helm upgrade spin stable/spinnaker -f spinnaker-config.yaml --timeout 600 --version 1.8.1 --wait
-```
-
-Validate deployments
-----------------
-
-
-
-```
-kubectl get pods
-```
-
-Set up port forwarding to the Spinnaker UI from Cloud Shell:
-
-```
-export DECK_POD=$(kubectl get pods --namespace default -l "cluster=spin-deck" \
+export DECK_POD=$(kubectl get pods --namespace spinnaker -l "cluster=spin-deck" \
     -o jsonpath="{.items[0].metadata.name}")
-kubectl port-forward --namespace default $DECK_POD 8080:9000 >> /dev/null &
+kubectl port-forward --namespace spinnaker $DECK_POD 8080:9000 >> /dev/null &
 ```
-To open the Spinnaker user interface, in Cloud Shell, click Web Preview, and then click Preview on port 8080.
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+## Install AWS Managed account --- TBD
+
+Install AWS CLI
+
+```
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+```
+
+```
+/usr/local/bin/aws --version
+```
+
+ADD AWS -- https://www.spinnaker.io/setup/install/providers/kubernetes-v2/aws-eks/
+
+```
+curl -O https://d3079gxvs8ayeg.cloudfront.net/templates/managed.yaml  
+```
+
+```
+aws cloudformation deploy --stack-name spinnaker-managed-infrastructure-setup --template-file managed.yaml \
+--parameter-overrides AuthArn=$AUTH_ARN ManagingAccountId=$MANAGING_ACCOUNT_ID --capabilities CAPABILITY_NAMED_IAM
+```
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+Can use downloaded Ford Sample App $BASE_DIR/continuous-integration-on-kubernetes/sample-app
+++++++++++++
 
 In Cloud Shell, download and unpack the sample source code:
 
@@ -563,31 +540,50 @@ git config --global user.email "$EMAIL"
 git config --global user.name "$USER"
 ```
 
-Make the initial commit to your source code repository:
 ```
 git init
 git add .
-git commit -m "Initial commit-1-5-20"
+git commit -m "Initial commit"
 ```
-
-Create a repository to host your code:
 
 ```
 gcloud source repos create sample-app
 ```
-
-Add your new repository as remote, and push your code to the master branch of the remote repository:
 
 ```
 git remote add origin https://source.developers.google.com/p/$PROJECT_ID/r/sample-app
 git push origin master
 ```
 
+**********************
+Option Change to GIT Credentials
+```
+git config --global user.email \
+    "[EMAIL_ADDRESS]"
+git config --global user.name \
+    "[USERNAME]"
+```
+
+Make the initial commit to your source code repository:
+```
+git init
+git add .
+git commit -m "Initial commit-4-3-20"
+```
+
+
+Add your new repository as remote, and push your code to the master branch of the remote repository:
+
+**********************
+
+
 View Source code
 
 ```
 https://console.cloud.google.com/code/develop/browse/sample-app/master?_ga=2.22785213.-768538728.1545413763
 ```
+++++++++++++
+
 
 In the GCP Console, go to Cloud Build > Create trigger:
 
@@ -628,6 +624,8 @@ Push your first image by creating a git tag and pushing the tag to the repositor
 ```
 git tag v1.5.0
 git push --tags
+```
+
 
 #Verify build is pushed by going to Cloud Build --> History
 ```
@@ -638,9 +636,16 @@ Create a multi-cluster deployment pipeline
 
 Use spin to create an application in Spinnaker:
 
+Install Spin
+```
+curl -Lo $WORKDIR/spin https://storage.googleapis.com/spinnaker-artifacts/spin/1.5.2/linux/amd64/spin
+chmod +x $WORKDIR/spin
+sudo cp $WORKDIR/spin /usr/local/bin/spin
+```
+
 ```
 cd $WORKDIR
-./spin application save --application-name sample \
+./spin application save --application-name sample2 \
     --owner-email example@example.com \
     --cloud-providers kubernetes \
     --gate-endpoint http://localhost:8080/gate
@@ -695,4 +700,3 @@ git commit -a -m "Change color to orange"
 git tag v1.5.3
 git push --tags
 ```
-
