@@ -1,7 +1,7 @@
 #   Multi-Cloud Workshop -- AI/ML -- Anthos
 ## Reference Architecture
 
-![Workshop Screenshot](images/multi-cloud-workshop.png?raw=true "Workshop Diagram")
+![Workshop Screenshot](images/multi-cloud-arch.png?raw=true "Workshop Diagram")
 
 ## Overview
 
