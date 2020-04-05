@@ -538,25 +538,42 @@ git config --global user.email "$EMAIL"
 git config --global user.name "$USER"
 ```
 
-Make the initial commit to your source code repository:
 ```
 git init
 git add .
-git commit -m "Initial commit-3-30-20"
+git commit -m "Initial commit"
 ```
-
-Create a repository to host your code:
 
 ```
 gcloud source repos create sample-app
 ```
 
-Add your new repository as remote, and push your code to the master branch of the remote repository:
-
 ```
 git remote add origin https://source.developers.google.com/p/$PROJECT_ID/r/sample-app
 git push origin master
 ```
+
+**********************
+Option Change to GIT Credentials
+```
+git config --global user.email \
+    "[EMAIL_ADDRESS]"
+git config --global user.name \
+    "[USERNAME]"
+```
+
+Make the initial commit to your source code repository:
+```
+git init
+git add .
+git commit -m "Initial commit-4-3-20"
+```
+
+
+Add your new repository as remote, and push your code to the master branch of the remote repository:
+
+**********************
+
 
 View Source code
 
@@ -605,6 +622,8 @@ Push your first image by creating a git tag and pushing the tag to the repositor
 ```
 git tag v1.5.0
 git push --tags
+```
+
 
 #Verify build is pushed by going to Cloud Build --> History
 ```
@@ -615,9 +634,16 @@ Create a multi-cluster deployment pipeline
 
 Use spin to create an application in Spinnaker:
 
+Install Spin
+```
+curl -Lo $WORKDIR/spin https://storage.googleapis.com/spinnaker-artifacts/spin/1.5.2/linux/amd64/spin
+chmod +x $WORKDIR/spin
+sudo cp $WORKDIR/spin /usr/local/bin/spin
+```
+
 ```
 cd $WORKDIR
-./spin application save --application-name sample \
+./spin application save --application-name sample2 \
     --owner-email example@example.com \
     --cloud-providers kubernetes \
     --gate-endpoint http://localhost:8080/gate
