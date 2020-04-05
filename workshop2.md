@@ -1,7 +1,7 @@
 ******************************************************
 ## Workshop 2 -- CD Spinnaker
 
-![Workshop 1 Screenshot](images/ws2-diagram.png?raw=true "Workshop 2 Diagram")
+![Workshop 1 Screenshot](images/workshop2-arch-diagram.png?raw=true "Workshop 2 Diagram")
 
 ### Prerequisites
 ------
