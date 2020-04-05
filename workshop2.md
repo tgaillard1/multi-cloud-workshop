@@ -8,7 +8,7 @@
 1. A Google Cloud Platform Account
 1. [Enable the Cloud Build and Cloud Source Repositories APIs](https://console.cloud.google.com/flows/enableapi?apiid=container,cloudbuild.googleapis.com,sourcerepo.googleapis.com&redirect=https://console.cloud.google.com&_ga=2.48886959.843635228.1580750081-768538728.1545413763)
 
-Set Project and Zone
+Set Project
 ```
 gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID 
 ```
