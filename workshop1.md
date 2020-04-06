@@ -2,13 +2,23 @@
 
 ![Workshop 1 Screenshot](images/jenkins-ci-arch.png?raw=true "Workshop 1 Diagram")
 
+## Prerequisites
+*  A Google Cloud Platform Account
+*  [Enable the Compute Engine, Container Engine, and Container Builder APIs](https://console.cloud.google.com/flows/enableapi?apiid=compute_component,container,cloudbuild.googleapis.com)
+
+
 ### Create kubernetes Cluster for CI
 
-Get/CD into source code
+Set Project
+```
+gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID 
+```
 
+Get All Workshop source code 
+**NOTE-- All workshops share the same code so do not repeat if you have already run another workshop
 ```
 git clone https://github.com/tgaillard1/multi-cloud-workshop.git
-cd ~/multi-cloud-workshop
+cd multi-cloud-workshop/
 source ./env
 ```
 
