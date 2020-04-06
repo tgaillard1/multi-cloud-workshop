@@ -17,7 +17,7 @@ gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID
 Get All Workshop source code 
 
 
-**NOTE-- All workshops share the same code so do not repeat if you have already run another workshop
+**NOTE** -- All workshops share the same code so do not repeat if you have already run another workshop
 ```
 git clone https://github.com/tgaillard1/multi-cloud-workshop.git
 cd multi-cloud-workshop/
