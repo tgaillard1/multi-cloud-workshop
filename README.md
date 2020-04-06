@@ -20,5 +20,5 @@ The main concepts that are promoted:
 *  Subsequent workshops have some additional prerequisites
 
 ## Workshop Structure
-This workshop is divided into three distinct workshops to facilate individual adoption.  The goal is to provide a modular platform to include assests that are part of your deployment architecture.  Overtime the workshop should include additional services based on customers needs.  
+This workshop is divided into three distinct workshops to facilate individual adoption.  The goal is to provide a modular platform to include assests that are part of your deployment architecture.  Overtime the workshop should include additional services based on customers needs.  Please provide comments and roadmap items that you would like included into the project. 
 
