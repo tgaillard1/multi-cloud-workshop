@@ -242,6 +242,7 @@ kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-
 ```
 
 This should return:
+
 **deployment.extensions/istio-galley condition met**
 **deployment.extensions/istio-ingressgateway condition met**
 **deployment.extensions/istio-pilot condition met**
@@ -250,9 +251,9 @@ This should return:
 
 
 Change labels to ensure Istio/Envoy is deployed as sidecar
-    ```
-    kubectl label namespace default istio-injection=enabled --overwrite
-    ```
+````
+kubectl label namespace default istio-injection=enabled --overwrite
+````
 
 ------
 ### Install Helm
