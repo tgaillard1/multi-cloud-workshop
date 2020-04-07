@@ -1,20 +1,29 @@
-#   Workshop 1 -- CI Jenkins 
+#   Workshop 1 -- Continuous Integration -- Jenkins 
 
 ![Workshop 1 Screenshot](images/jenkins-ci-arch.png?raw=true "Workshop 1 Diagram")
 
 ## Prerequisites
 *  A Google Cloud Platform Account
-*  [Enable the Compute Engine, Container Engine, and Container Builder APIs](https://console.cloud.google.com/flows/enableapi?apiid=compute_component,container,cloudbuild.googleapis.com)
-
-
-### Create kubernetes Cluster for CI
-
-Set Project
+*  Set Project
 ```
 gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID 
 ```
+*  Enable API's
+```
+gcloud services enable \
+    container.googleapis.com \
+    compute.googleapis.com \
+    stackdriver.googleapis.com \
+    meshca.googleapis.com \
+    meshtelemetry.googleapis.com \
+    meshconfig.googleapis.com \
+    iamcredentials.googleapis.com \
+    anthos.googleapis.com
+```
 
-Get All Workshop source code 
+### Create kubernetes Cluster for CI
+
+Get workshop source code 
 
 
 **NOTE** -- All workshops share the same code so do not repeat if you have already run another workshop
