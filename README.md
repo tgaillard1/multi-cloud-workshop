@@ -22,6 +22,8 @@ The main concepts that are promoted:
 ## Workshop Structure
 This workshop is divided into three distinct workshops to facilate individual adoption.  The goal is to provide a modular platform to include assests that are part of your deployment architecture.  Overtime the workshop should include additional services based on customers needs.  Please provide comments and roadmap items that you would like included into the project. 
 
-[Workshop 1](https://github.com/tgaillard1/multi-cloud-workshop/blob/master/workshop1.md "Workshop 1")
-[Workshop 2](https://github.com/tgaillard1/multi-cloud-workshop/blob/master/workshop2.md "Workshop 2")
-[Workshop 3](https://github.com/tgaillard1/multi-cloud-workshop/blob/master/workshop3.md "Workshop 3")
++ [Workshop 1](https://github.com/tgaillard1/multi-cloud-workshop/blob/master/workshop1.md "Workshop 1")
+
++ [Workshop 2](https://github.com/tgaillard1/multi-cloud-workshop/blob/master/workshop2.md "Workshop 2")
+
++ [Workshop 3](https://github.com/tgaillard1/multi-cloud-workshop/blob/master/workshop3.md "Workshop 3")
