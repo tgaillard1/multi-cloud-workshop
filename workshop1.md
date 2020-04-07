@@ -69,10 +69,10 @@ curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |
   grep browser_download |\
   grep $opsys |\
   cut -d '"' -f 4 |\
-  xargs curl -L -o kustomize
+  xargs curl -L -o $WORKDIR/kustomize
 
-sudo chmod +x kustomize
-sudo cp kustomize /usr/local/bin/kustomize
+sudo chmod +x $WORKDIR/kustomize
+sudo cp $WORKDIR/kustomize /usr/local/bin/kustomize
 ```
 Set Git Hub Repo
 ```
