@@ -63,6 +63,7 @@ chmod +x $WORKDIR/nomos
 sudo cp $WORKDIR/nomos /usr/local/bin/nomos
 ```
 
+Intall Kustomize
 ```
 opsys=linux
 curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |\
@@ -74,39 +75,76 @@ curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |
 sudo chmod +x $WORKDIR/kustomize
 sudo cp $WORKDIR/kustomize /usr/local/bin/kustomize
 ```
-Set Git Hub Repo
+
+### Create Git Hub Config Management Repo
+
+Create Git Hub Repo
+Login to your Git Hub account --> got to repositories --> select "New" --> Enter variables below:
++ Repository Name = config-mgmt-repo
++ Description = Config Management for multi-cloud
++ --> Creat Repository
+
+Copy Repo URL link and enter below
+
+Create Input Variable for Config Management
 ```
-REPO="anthos-demo"
-PROJECT=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
-ACCOUNT=$(gcloud config list --format 'value(core.account)' 2>/dev/null)
+export REPO="config-mgmt-repo"
+export ACCOUNT=YOUR_GIT_USER
+export REPO_URL=https://github.com/${ACCOUNT}/${REPO}.git
 ```
 
+Initialize for Git Push
 ```
-cp -rf ~/multi-cloud-workshop/anthos-config-mgmt/ .
+cd $HOME
+cp -rf $BASE_DIR/config-mgmt-repo/ .
 cd anthos-config-mgmt/
-git clone https://github.com/tgaillard1/anthos-demo.git
-nomos init
-ls -lrt
-cd anthos-demo/
-nomos init
+git init
+git config credential.helper
+git remote add origin $REPO_URL
 ```
 
+Push Files to Git Repo
 ```
 git add .
-git commit -m 'Adding initial files for nomos'
+git commit -m "Initial commit"
 git push origin master
 ```
 
+### Add deployment key to GIT repo
 ```
-kubectx (to verify cluster)
+ssh-keygen -t rsa -b 4096 \
+ -C "${ACCOUNT}" \
+ -N '' \
+ -f ${HOME}/.ssh/config-mgmt-key
 ```
 
+Go to Git -- Repo --> config-mgmt-repo --> settings --> Deploy keys --> Add deploy key
+
+--> Add a **Title** = config-mgmt-deploy-key
+
+--> Copy contents of public key from command below to **Key** location:
+```
+cat ${HOME}/.ssh/config-mgmt-key.pub
+```
+
+--> Allow write access to GitHub
+
+--> Add key
+
+
+### Rename context and set configuration
+```
+kubectx ${CLUSTER_NAME1}=gke_${PROJECT_ID}_${CLUSTER_ZONE1}_${CLUSTER_NAME1}
+```
+
+Create cluster admin binding
 ```
 kubectl create clusterrolebinding cluster-admin-binding \
   --clusterrole cluster-admin \
   --user="$(gcloud config get-value core/account)"
 ```
 
+Obtain and deploy operator for Jenkins
 ```
 gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml config-management-operator.yaml
 ```
@@ -115,29 +153,11 @@ gsutil cp gs://config-management-release/released/latest/config-management-opera
 kubectl apply -f config-management-operator.yaml
 ```
 
-```
-ssh-keygen -t rsa -b 4096 \
- -C "tgaillard1" \
- -N '' \
- -f ${HOME}/.ssh/anthos-demo-key
-```
-
-
-
-### Add deployment key to GIT repo
-Go to Git -- Repo --> anthos-demo --> settings --> Deploy keys --> Add deploy key
-
-```
-cat /home/tgaillard/.ssh/anthos-demo-key.pub
-```
-
-Copy contents and add with --> Allow write access to GitHub
-
-
+Create credentials for kubernetes
 ```
 kubectl create secret generic git-creds \
 --namespace=config-management-system \
---from-file=ssh=${HOME}/.ssh/anthos-demo-key
+--from-file=ssh=${HOME}/.ssh/config-mgmt-key
 ```
 
 ### Create Config Management for Kubernetes
@@ -152,29 +172,27 @@ spec:
   # clusterName is required and must be unique among all managed clusters
   clusterName: ${CLUSTER_NAME1}
   git:
-    syncRepo: git@github.com:tgaillard1/anthos-demo.git
+    syncRepo: git@github.com:${ACCOUNT}/${REPO}.git
     syncBranch: master
     secretType: ssh
     policyDir: "."
 EOF
 ```
 
+Apply config management to kubernetes
 ```
-kubectl apply -f config-management.yaml
+kubectl apply -f $BASE_DIR/config-management-${CLUSTER_NAME1}.yaml
 ```
+
 Validate install
 
 ```
-nomos status to validate --> SYNCED
+nomos status to validate | grep ${CLUSTER_NAME1} --> SYNCED
 ```
 
 ### Adding Anthos Service Mesh
 
-```
-kubectl create clusterrolebinding cluster-admin-binding \
-  --clusterrole=cluster-admin \
-  --user="$(gcloud config get-value core/account)"
-```
+Validate download and authorize Anthos Service Mesh
 
 ```
 curl --request POST \
@@ -195,19 +213,20 @@ wQfk16sxprI2gOJ2vFFggdq3ixF2h4qNBt0kI7ciDhgpwS8t+/960IsIgw==
 EOF
 ```
 
+Unpackage asm
 ```
 cd $WORKDIR/
 tar xzf istio-1.4.6-asm.0-linux.tar.gz
-```
 
-```
 cd $WORKDIR/istio-1.4.6-asm.0
 ```
 
+Set Path for asm
 ```
 export PATH=$PWD/bin:$PATH
 ```
 
+Initiate install of asm
 ```
 istioctl manifest apply --set profile=asm \
   --set values.global.trustDomain=${IDNS} \
@@ -217,25 +236,26 @@ istioctl manifest apply --set profile=asm \
   --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME1}|${CLUSTER_ZONE1}"
 ```
 
+Validate Install
 ```
 kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system
 ```
 
-```
-asmctl validate
-asmctl validate --with-testing-workloads
-```
+This should return:
+**deployment.extensions/istio-galley condition met**
+**deployment.extensions/istio-ingressgateway condition met**
+**deployment.extensions/istio-pilot condition met**
+**deployment.extensions/istio-sidecar-injector condition met**
+**deployment.extensions/promsd condition met**
+
 
 Change labels to ensure Istio/Envoy is deployed as sidecar
-```
-kubectl label namespace default istio-injection=enabled --overwrite
-```
+    ```
+    kubectl label namespace default istio-injection=enabled --overwrite
+    ```
 
 ------
 ### Install Helm
-
-
-In this lab, you will use Helm to install Jenkins from the Charts repository. Helm is a package manager that makes it easy to configure and deploy Kubernetes applications.  Once you have Jenkins installed, you'll be able to set up your CI/CD pipleline.
 
 1. Download and install the helm binary -- Unzip the file to your local system:
 
