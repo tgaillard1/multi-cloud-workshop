@@ -1,16 +1,17 @@
-## Configure User Access (IAP)
-
-```bash
-~/cloudshell_open/spinnaker-for-gcp/scripts/manage/grant_iap_access.sh
-```
-
-Alternatively, you can manually grant the `IAP-secured Web App User` role on the `spinnaker/spin-deck` resource to the user you'd like to grant access to [here](https://console.developers.google.com/security/iap?project={{project-id}}).
-
 ## Use Spinnaker
 
-### Connect to Spinnaker
+### Forward the port to Deck, and connect
 
-Connect to your Spinnaker installation [here](https://$DOMAIN_NAME).
+Don't use the `hal deploy connect` command. Instead, use the following command
+only.
+
+```bash
+~/cloudshell_open/spinnaker-for-gcp/scripts/manage/connect_unsecured.sh
+```
+
+To connect to the Deck UI, click on the Preview button above and select "Preview on port 8080":
+
+![Image](https://github.com/GoogleCloudPlatform/spinnaker-for-gcp/raw/master/scripts/manage/preview_button.png)
 
 ### View Spinnaker Audit Log
 
@@ -21,6 +22,17 @@ View the who, what, when and where of your Spinnaker installation
 
 View the logging output of the individual components of your Spinnaker installation
 [here](https://console.developers.google.com/logs/viewer?project={{project-id}}&resource=k8s_container%2Fcluster_name%2F$GKE_CLUSTER%2Fnamespace_name%2Fspinnaker).
+
+### Expose Spinnaker
+
+If you would like to connect to Spinnaker without relying on port forwarding, we can
+expose it via a secure domain behind the [Identity-Aware Proxy](https://cloud.google.com/iap/).
+
+Note that this phase could take 30-60 minutes. **Spinnaker will be inaccessible during this time.**
+
+```bash
+~/cloudshell_open/spinnaker-for-gcp/scripts/expose/configure_endpoint.sh
+```
 
 ### Install sample applications and pipelines
 

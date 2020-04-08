@@ -214,11 +214,9 @@ if [ -z "$CLUSTER_EXISTS" ]; then
   # TODO: Should this be regional instead?
   eval gcloud beta container clusters create $GKE_CLUSTER --project $PROJECT_ID \
     --zone $ZONE --username "admin" --network $NETWORK_REFERENCE --subnetwork $SUBNET_REFERENCE \
-    --cluster-version $GKE_CLUSTER_VERSION --machine-type $NODE_SIZE --image-type "COS" \
+    --cluster-version $GKE_CLUSTER_VERSION --machine-type $GKE_MACHINE_TYPE --image-type "COS" \
     --disk-type $GKE_DISK_TYPE --disk-size $GKE_DISK_SIZE --service-account $SA_EMAIL \
-    --num-nodes $NODE_COUNT --enable-stackdriver-kubernetes --enable-autoupgrade \
-    --identity-namespace=${IDNS} \
-    --labels mesh_id=${MESH_ID} \
+    --num-nodes $GKE_NUM_NODES --enable-stackdriver-kubernetes --enable-autoupgrade \
     --enable-autorepair --enable-ip-alias --addons HorizontalPodAutoscaling,HttpLoadBalancing \
     "${CLUSTER_SECONDARY_RANGE_NAME:+'--cluster-secondary-range-name' $CLUSTER_SECONDARY_RANGE_NAME}" \
     "${SERVICES_SECONDARY_RANGE_NAME:+'--services-secondary-range-name' $SERVICES_SECONDARY_RANGE_NAME}"

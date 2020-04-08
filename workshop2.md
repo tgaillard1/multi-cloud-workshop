@@ -1,42 +1,39 @@
-******************************************************
 ## Workshop 2 -- CD Spinnaker
 
 ![Workshop 1 Screenshot](images/workshop2-arch-diagram.png?raw=true "Workshop 2 Diagram")
 
-### Prerequisites
-------
-1. A Google Cloud Platform Account
-1. [Enable the Cloud Build and Cloud Source Repositories APIs](https://console.cloud.google.com/flows/enableapi?apiid=container,cloudbuild.googleapis.com,sourcerepo.googleapis.com&redirect=https://console.cloud.google.com&_ga=2.48886959.843635228.1580750081-768538728.1545413763)
-
-Set Project and Zone
+## Prerequisites
+*  A Google Cloud Platform Account
+*  A Git Hub Account
+*  Set Project
 ```
 gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID 
 ```
 
-Enable API's
+*  Enable API's
+```shell
+    gcloud services enable \
+        container.googleapis.com \
+        compute.googleapis.com \
+        stackdriver.googleapis.com \
+        meshca.googleapis.com \
+        meshtelemetry.googleapis.com \
+        meshconfig.googleapis.com \
+        iamcredentials.googleapis.com \
+        sourcerepo.googleapis.com \
+        anthos.googleapis.com
+    ```
 
-```
-gcloud services enable \
-    container.googleapis.com \
-    compute.googleapis.com \
-    stackdriver.googleapis.com \
-    meshca.googleapis.com \
-    meshtelemetry.googleapis.com \
-    meshconfig.googleapis.com \
-    iamcredentials.googleapis.com \
-    anthos.googleapis.com
-```
+**NOTE** -- Skip the next step if you have already download the source code from the first workshop (1).
 
-NOTE -- Skip the next step if you have already download the source code from the first workshop (1).
-
-Get Source code
+Get workshop source code 
 ```
 git clone https://github.com/tgaillard1/multi-cloud-workshop.git
 cd ~/multi-cloud-workshop
 source ./env
 ```
 
-Create Spinnaker and Cluster
+### Create Spinnaker and Cluster
 
 New Source 
 ```

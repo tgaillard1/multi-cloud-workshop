@@ -4,10 +4,12 @@
 
 ## Prerequisites
 *  A Google Cloud Platform Account
+*  A Git Hub Account
 *  Set Project
 ```
 gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID 
 ```
+
 *  Enable API's
 ```
 gcloud services enable \
