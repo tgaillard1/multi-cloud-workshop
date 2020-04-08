@@ -11,7 +11,7 @@ gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID
 ```
 
 *  Enable API's
-```shell
+    ```shell
     gcloud services enable \
         container.googleapis.com \
         compute.googleapis.com \
@@ -21,52 +21,51 @@ gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID
         meshconfig.googleapis.com \
         iamcredentials.googleapis.com \
         sourcerepo.googleapis.com \
+        redis.googleapis.com \
         anthos.googleapis.com
     ```
 
 **NOTE** -- Skip the next step if you have already download the source code from the first workshop (1).
 
 Get workshop source code 
-```
-git clone https://github.com/tgaillard1/multi-cloud-workshop.git
-cd ~/multi-cloud-workshop
-source ./env
-```
+    ```shell
+    git clone https://github.com/tgaillard1/multi-cloud-workshop.git
+    cd ~/multi-cloud-workshop
+    source ./env
+    ```
 
 ### Create Spinnaker and Cluster
 
-New Source 
-```
-git clone https://github.com/GoogleCloudPlatform/spinnaker-for-gcp.git ~/cloudshell_open/spinnaker-for-gcp
-cd ~/cloudshell_open/spinnaker-for-gcp
-```
+Set environment
+    ```shell
+    cd ~/multi-cloud-workshop
+    source ./env
+    ```
 
-Or Copy from original
-```
-cp -rf $BASE_DIR/spinnaker-for-gcp ~/cloudshell_open/spinnaker-for-gcp
-```
+Copy Spinnaker application and create sim link
+    ```shell
+    mkdir $HOME/cloudshell_open
+    ln -s $BASE_DIR/spinnaker-for-gcp $HOME/cloudshell_open/
+    ```
 
-Add Git credentials
+Set Git credentials
 ```
 git config --global user.email \
-    "[EMAIL_ADDRESS]"
+    "[GIT_EMAIL_ADDRESS]"
 git config --global user.name \
-    "[USERNAME]"
-```
-
-```
-cat ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties | \
-  sed -i 's/spinnaker-1/spinnaker1/g' ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties 
-
-  sed -i 's/old-text/new-text/g' i
+    "[GIT_USERNAME]"
 ```
 
 Set the Spinnaker variables
 ```
 PROJECT_ID=$PROJECT_ID \
     ~/cloudshell_open/spinnaker-for-gcp/scripts/install/setup_properties.sh
+```
 
-sed -i 's/spinnaker-1/spinnaker1/g' ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties 
+Edit properties file for Istio
+```
+cat ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties | \
+  sed -i 's/spinnaker-1/spinnaker1/g' ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties 
 ```
 
 Run install for Spinnaker
@@ -74,6 +73,7 @@ Run install for Spinnaker
 ~/cloudshell_open/spinnaker-for-gcp/scripts/install/setup.sh
 ```
 
+Set new environment variables for Spinnaker
 ```
 source ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties
 ```
@@ -81,6 +81,9 @@ source ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties
 Log into new cluster
 ```
 gcloud container clusters get-credentials $GKE_CLUSTER --zone $ZONE --project ${PROJECT_ID}
+
+Fetching cluster endpoint and auth data.
+kubeconfig entry generated for spinnaker1
 ```
 
 Log into Spinnaker UI
@@ -112,20 +115,20 @@ gcloud beta container clusters create ${CLUSTER_NAME3} \
     --labels mesh_id=${MESH_ID} \
     --zone ${CLUSTER_ZONE3} \
     --scopes "https://www.googleapis.com/auth/source.read_write,cloud-platform"
-```
 
-
-Connect to clusters
-```
-gcloud container clusters get-credentials $GKE_CLUSTER --zone $ZONE --project ${PROJECT_ID}
-gcloud container clusters get-credentials ${CLUSTER_NAME2} --zone ${CLUSTER_ZONE2} --project ${PROJECT_ID}
-gcloud container clusters get-credentials ${CLUSTER_NAME3} --zone ${CLUSTER_ZONE3} --project ${PROJECT_ID}
 ```
 
 Restart Spinnaker Cluster -- labels
 ```
 gcloud beta container clusters update $GKE_CLUSTER --identity-namespace=${IDNS} --zone $ZONE
 gcloud beta container clusters update $GKE_CLUSTER --update-labels mesh_id=${MESH_ID} --zone $ZONE
+```
+
+Connect to clusters
+```
+gcloud container clusters get-credentials $GKE_CLUSTER --zone $ZONE --project ${PROJECT_ID}
+gcloud container clusters get-credentials ${CLUSTER_NAME2} --zone ${CLUSTER_ZONE2} --project ${PROJECT_ID}
+gcloud container clusters get-credentials ${CLUSTER_NAME3} --zone ${CLUSTER_ZONE3} --project ${PROJECT_ID}
 ```
 
 Rename clusters
@@ -190,61 +193,92 @@ curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |
   grep browser_download |\
   grep $opsys |\
   cut -d '"' -f 4 |\
-  xargs curl -L -o kustomize
+  xargs curl -L -o $WORKDIR/kustomize
 
 sudo chmod +x $WORKDIR/kustomize
 sudo cp $WORKDIR/kustomize /usr/local/bin/kustomize
 ```
 
-Create and link Repo
+## Note -- Skip this step if you have completed it in workshop (1,3)
+Proceed to --> **Create Input Variable for Config Management** below
+
+### Create Git Hub Config Management Repo
+
+Create Git Hub Repo
+Login to your Git Hub account --> got to repositories --> select "New" --> Enter variables below:
++ Repository Name = config-mgmt-repo
++ Description = Config Management for multi-cloud
++ --> Creat Repository
+
+Copy Repo URL link and enter below
+
+Create Input Variable for Config Management
 ```
-REPO="anthos-demo"
-PROJECT=$(gcloud config list --format 'value(core.project)' 2>/dev/null)
-ACCOUNT=$(gcloud config list --format 'value(core.account)' 2>/dev/null)
+export REPO="config-mgmt-repo"
+export ACCOUNT=YOUR_GIT_USER
+export REPO_URL=https://github.com/${ACCOUNT}/${REPO}.git
 ```
 
+Initialize for Git Push
 ```
-cp -rf ~/multi-cloud-workshop/anthos-config-mgmt/ .
-cd anthos-config-mgmt/
-git clone https://github.com/tgaillard1/anthos-demo.git
-nomos init
-ls -lrt
-cd anthos-demo/
-nomos init
+cd $HOME
+cp -rf $BASE_DIR/config-mgmt-repo/ .
+cd ~/anthos-config-mgmt
+git init
+git config credential.helper
+git remote add origin $REPO_URL
 ```
 
+Push Files to Git Repo
 ```
 git add .
-git commit -m 'Adding initial files for nomos'
+git commit -m "Initial commit"
 git push origin master
 ```
 
+### Add deployment key to GIT repo
 ```
 ssh-keygen -t rsa -b 4096 \
- -C "tgaillard1" \
+ -C "${ACCOUNT}" \
  -N '' \
- -f ${HOME}/.ssh/anthos-demo-key
+ -f ${HOME}/.ssh/config-mgmt-key
 ```
 
-Add deployment key to GIT repo
-Go to Git -- Repo --> anthos-demo --> settings --> Deploy keys --> Add deploy key
+Go to Git -- Repo --> config-mgmt-repo --> settings --> Deploy keys --> Add deploy key
 
+--> Add a **Title** = config-mgmt-deploy-key
+
+--> Copy contents of public key from command below to **Key** location:
 ```
-cat ${HOME}/.ssh/anthos-demo-key.pub
+cat ${HOME}/.ssh/config-mgmt-key.pub
 ```
 
-copy contents and add with --> Allow write access
+--> Allow write access to GitHub
 
+--> Add key
+
+----
+
+Create Input Variable for Config Management
+```
+export REPO="config-mgmt-repo"
+export ACCOUNT=YOUR_GIT_USER
+export REPO_URL=https://github.com/${ACCOUNT}/${REPO}.git
+```
+
+Obtain and deploy operator for Spinnaker
 ```
 gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml $BASE_DIR/config-management-operator.yaml
 ```
 
+Apply operator to clusters
 ```
 kubectl apply -f $BASE_DIR/config-management-operator.yaml --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
 kubectl apply -f $BASE_DIR/config-management-operator.yaml --context ${CLUSTER_NAME2}
 kubectl apply -f $BASE_DIR/config-management-operator.yaml --context ${CLUSTER_NAME3}
 ```
 
+Create credentials for kubernetes
 ```
 kubectl create secret generic git-creds \
 --namespace=config-management-system \
@@ -257,7 +291,9 @@ kubectl create secret generic git-creds \
 --namespace=config-management-system \
 --context=${CLUSTER_NAME2} \
 --from-file=ssh=${HOME}/.ssh/anthos-demo-key
+```
 
+```
 kubectl create secret generic git-creds \
 --namespace=config-management-system \
 --context=${CLUSTER_NAME3} \

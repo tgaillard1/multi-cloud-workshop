@@ -100,7 +100,7 @@ Initialize for Git Push
 ```
 cd $HOME
 cp -rf $BASE_DIR/config-mgmt-repo/ .
-cd anthos-config-mgmt/
+cd ~/anthos-config-mgmt
 git init
 git config credential.helper
 git remote add origin $REPO_URL
@@ -152,6 +152,7 @@ Obtain and deploy operator for Jenkins
 gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml config-management-operator.yaml
 ```
 
+Apply operator to cluster
 ```
 kubectl apply -f config-management-operator.yaml
 ```
