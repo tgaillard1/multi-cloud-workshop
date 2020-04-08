@@ -27,7 +27,7 @@ gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID
 
 **NOTE** -- Skip the next step if you have already download the source code from the first workshop (1).
 
-Get workshop source code 
+*  Get workshop source code
     ```shell
     git clone https://github.com/tgaillard1/multi-cloud-workshop.git
     cd ~/multi-cloud-workshop
@@ -36,49 +36,49 @@ Get workshop source code
 
 ### Create Spinnaker and Cluster
 
-Set environment
+*  Set environment
     ```shell
     cd ~/multi-cloud-workshop
     source ./env
     ```
 
-Copy Spinnaker application and create sim link
+*  Copy Spinnaker application and create sim link
     ```shell
     mkdir $HOME/cloudshell_open
     ln -s $BASE_DIR/spinnaker-for-gcp $HOME/cloudshell_open/
     ```
 
-Set Git credentials
-```
-git config --global user.email \
-    "[GIT_EMAIL_ADDRESS]"
-git config --global user.name \
-    "[GIT_USERNAME]"
-```
+*  Set Git credentials
+    ```shell
+    git config --global user.email \
+        "[GIT_EMAIL_ADDRESS]"
+    git config --global user.name \
+        "[GIT_USERNAME]"
+    ```
 
-Set the Spinnaker variables
-```
-PROJECT_ID=$PROJECT_ID \
-    ~/cloudshell_open/spinnaker-for-gcp/scripts/install/setup_properties.sh
-```
+*  Set the Spinnaker variables
+    ```shell
+    PROJECT_ID=$PROJECT_ID \
+        ~/cloudshell_open/spinnaker-for-gcp/scripts/install/setup_properties.sh
+    ```
 
-Edit properties file for Istio
-```
-cat ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties | \
-  sed -i 's/spinnaker-1/spinnaker1/g' ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties 
-```
+*  Edit properties file for Istio
+    ```shell
+    cat ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties | \
+    sed -i 's/spinnaker-1/spinnaker1/g' ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties 
+    ```
 
-Run install for Spinnaker
+*  Run install for Spinnaker
 ```
 ~/cloudshell_open/spinnaker-for-gcp/scripts/install/setup.sh
 ```
 
-Set new environment variables for Spinnaker
+*  Set new environment variables for Spinnaker
 ```
 source ~/cloudshell_open/spinnaker-for-gcp/scripts/install/properties
 ```
 
-Log into new cluster
+*  Log into new cluster
 ```
 gcloud container clusters get-credentials $GKE_CLUSTER --zone $ZONE --project ${PROJECT_ID}
 
@@ -86,7 +86,7 @@ Fetching cluster endpoint and auth data.
 kubeconfig entry generated for spinnaker1
 ```
 
-Log into Spinnaker UI
+*  Log into Spinnaker UI
 ```
 export DECK_POD=$(kubectl get pods --namespace spinnaker -l "cluster=spin-deck" \
     -o jsonpath="{.items[0].metadata.name}")
@@ -118,26 +118,26 @@ gcloud beta container clusters create ${CLUSTER_NAME3} \
 
 ```
 
-Restart Spinnaker Cluster -- labels
+*  Restart Spinnaker Cluster -- labels
 ```
 gcloud beta container clusters update $GKE_CLUSTER --identity-namespace=${IDNS} --zone $ZONE
 gcloud beta container clusters update $GKE_CLUSTER --update-labels mesh_id=${MESH_ID} --zone $ZONE
 ```
 
-Connect to clusters
+*  Connect to clusters
 ```
 gcloud container clusters get-credentials $GKE_CLUSTER --zone $ZONE --project ${PROJECT_ID}
 gcloud container clusters get-credentials ${CLUSTER_NAME2} --zone ${CLUSTER_ZONE2} --project ${PROJECT_ID}
 gcloud container clusters get-credentials ${CLUSTER_NAME3} --zone ${CLUSTER_ZONE3} --project ${PROJECT_ID}
 ```
 
-Rename clusters
+*  Rename clusters
 ```
 kubectx ${CLUSTER_NAME2}=gke_${PROJECT_ID}_${CLUSTER_ZONE2}_${CLUSTER_NAME2}
 kubectx ${CLUSTER_NAME3}=gke_${PROJECT_ID}_${CLUSTER_ZONE3}_${CLUSTER_NAME3}
 ```
 
-User Admin binding
+*  User Admin binding
 ```
 kubectl create clusterrolebinding user-admin-binding \
     --clusterrole=cluster-admin \
@@ -148,13 +148,14 @@ kubectl create clusterrolebinding user-admin-binding \
     --clusterrole=cluster-admin \
     --user=$(gcloud config get-value account) \
     --context ${CLUSTER_NAME2}
+
 kubectl create clusterrolebinding user-admin-binding \
     --clusterrole=cluster-admin \
     --user=$(gcloud config get-value account) \
     --context ${CLUSTER_NAME3}
 ```
 
-Cluster Admin binding
+*  Cluster Admin binding
 ```
 kubectl create clusterrolebinding cluster-admin-binding \
   --clusterrole cluster-admin \
@@ -175,7 +176,7 @@ kubectl create clusterrolebinding cluster-admin-binding \
 ## Adding Config Management
 
 
-Anthos Nomos Install
+*  Anthos Nomos Install
 ```
 gsutil cp gs://config-management-release/released/latest/linux_amd64/nomos $WORKDIR/nomos
 chmod +x $WORKDIR/nomos
@@ -186,7 +187,7 @@ sudo cp $WORKDIR/nomos /usr/local/bin/nomos
 cd $WORKDIR
 ```
 
-Install Kustomize
+*  Install Kustomize
 ```
 opsys=linux
 curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |\
@@ -204,7 +205,7 @@ Proceed to --> **Create Input Variable for Config Management** below
 
 ### Create Git Hub Config Management Repo
 
-Create Git Hub Repo
+*  Create Git Hub Repo
 Login to your Git Hub account --> got to repositories --> select "New" --> Enter variables below:
 + Repository Name = config-mgmt-repo
 + Description = Config Management for multi-cloud
@@ -212,14 +213,14 @@ Login to your Git Hub account --> got to repositories --> select "New" --> Enter
 
 Copy Repo URL link and enter below
 
-Create Input Variable for Config Management
+*  Create Input Variable for Config Management
 ```
 export REPO="config-mgmt-repo"
 export ACCOUNT=YOUR_GIT_USER
 export REPO_URL=https://github.com/${ACCOUNT}/${REPO}.git
 ```
 
-Initialize for Git Push
+*  Initialize for Git Push
 ```
 cd $HOME
 cp -rf $BASE_DIR/config-mgmt-repo/ .
@@ -229,7 +230,7 @@ git config credential.helper
 git remote add origin $REPO_URL
 ```
 
-Push Files to Git Repo
+*  Push Files to Git Repo
 ```
 git add .
 git commit -m "Initial commit"
@@ -259,26 +260,26 @@ cat ${HOME}/.ssh/config-mgmt-key.pub
 
 ----
 
-Create Input Variable for Config Management
+*  Create Input Variable for Config Management
 ```
 export REPO="config-mgmt-repo"
 export ACCOUNT=YOUR_GIT_USER
 export REPO_URL=https://github.com/${ACCOUNT}/${REPO}.git
 ```
 
-Obtain and deploy operator for Spinnaker
+*  Obtain and deploy operator for Spinnaker
 ```
 gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml $BASE_DIR/config-management-operator.yaml
 ```
 
-Apply operator to clusters
+*  Apply operator to clusters
 ```
 kubectl apply -f $BASE_DIR/config-management-operator.yaml --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
 kubectl apply -f $BASE_DIR/config-management-operator.yaml --context ${CLUSTER_NAME2}
 kubectl apply -f $BASE_DIR/config-management-operator.yaml --context ${CLUSTER_NAME3}
 ```
 
-Create credentials for kubernetes
+*  Create credentials for kubernetes
 ```
 kubectl create secret generic git-creds \
 --namespace=config-management-system \
@@ -302,7 +303,7 @@ kubectl create secret generic git-creds \
 
 ### Create Config Management for Kubernetes
 
-Spinnaker Cluster
+*  Spinnaker Cluster
 
 ```
 kubectx gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
