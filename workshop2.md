@@ -201,7 +201,7 @@ sudo cp $WORKDIR/kustomize /usr/local/bin/kustomize
 ```
 
 ## Note -- Skip this step if you have completed it in workshop (1,3)
-Proceed to --> **Create Input Variable for Config Management** below
+Proceed to --> **Git Hub Configured -- Add Variables and Credentials** below
 
 ### Create Git Hub Config Management Repo
 
@@ -237,7 +237,7 @@ git commit -m "Initial commit"
 git push origin master
 ```
 
-### Add deployment key to GIT repo
+*  Add deployment key to GIT repo
 ```
 ssh-keygen -t rsa -b 4096 \
  -C "${ACCOUNT}" \
@@ -260,7 +260,9 @@ cat ${HOME}/.ssh/config-mgmt-key.pub
 
 ----
 
-*  Create Input Variable for Config Management
+### Git Hub Configured -- Add Variables and Credentials
+
+*  Add Variables
 ```
 export REPO="config-mgmt-repo"
 export ACCOUNT=YOUR_GIT_USER
