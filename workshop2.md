@@ -450,15 +450,11 @@ kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-
 ```
 This should return:
 
-**deployment.extensions/istio-galley condition met**
-
-**deployment.extensions/istio-ingressgateway condition met**
-
-**deployment.extensions/istio-pilot condition met**
-
-**deployment.extensions/istio-sidecar-injector condition met**
-
-**deployment.extensions/promsd condition met**
+⋅⋅⋅ **deployment.extensions/istio-galley condition met**
+⋅⋅⋅ **deployment.extensions/istio-ingressgateway condition met**
+⋅⋅⋅ **deployment.extensions/istio-pilot condition met**
+⋅⋅⋅ **deployment.extensions/istio-sidecar-injector condition met**
+⋅⋅⋅ **deployment.extensions/promsd condition met**
 
 
 Initiate install of asm for Dev cluster
@@ -571,6 +567,8 @@ aws cloudformation deploy --stack-name spinnaker-managed-infrastructure-setup --
 --parameter-overrides AuthArn=$AUTH_ARN ManagingAccountId=$MANAGING_ACCOUNT_ID --capabilities CAPABILITY_NAMED_IAM
 ```
 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 # Install and run sample application and pipelines
 
 ## Introduction
@@ -589,9 +587,9 @@ Select the project containing your Spinnaker instance, then click **Start**, bel
 
 Run this command to create the required resources:
 
-```bash
-~/cloudshell_open/spinnaker-for-gcp/samples/helloworldwebapp/create_app_and_pipelines.sh
-```
+    ```shell
+    ~/cloudshell_open/spinnaker-for-gcp/samples/helloworldwebapp/create_app_and_pipelines.sh
+    ```
 
 ### Resources created:
 
