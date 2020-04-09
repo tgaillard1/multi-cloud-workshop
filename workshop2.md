@@ -450,11 +450,11 @@ kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-
 ```
 *  This should return:
 
-⋅⋅⋅**deployment.extensions/istio-galley condition met**
-⋅⋅⋅**deployment.extensions/istio-ingressgateway condition met**
-⋅⋅⋅**deployment.extensions/istio-pilot condition met**
-⋅⋅⋅**deployment.extensions/istio-sidecar-injector condition met**
-⋅⋅⋅**deployment.extensions/promsd condition met**
+   **deployment.extensions/istio-galley condition met**
+   **deployment.extensions/istio-ingressgateway condition met**
+   **deployment.extensions/istio-pilot condition met**
+   **deployment.extensions/istio-sidecar-injector condition met**
+   **deployment.extensions/promsd condition met**
 
 
 Initiate install of asm for Dev cluster
