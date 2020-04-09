@@ -117,7 +117,7 @@ Copy Repo URL link and enter below
     git push origin master
     ```
 
-# Create Credentials for GitHub
+## Create Credentials for GitHub
 
 *  Add deployment key to GIT repo
     ```shell
@@ -142,7 +142,7 @@ Go to Git --> Repo --> iac-source-repo --> settings --> Deploy keys --> Add depl
 
 --> Add key
 
-# Local Credentials
+## Local Credentials
 
 Navigate back to your Cloud Shell session
 Create the known_hosts file for GitHub. In your Cloud Shell session, run the command:
@@ -210,7 +210,7 @@ For more information, see Running builds on GitHub.
 Click Create Push Trigger. This creates a trigger for you.
 
 *  The directory that you copied has a cloudbuild.yaml file. This configuration file outlines the steps that a Cloud Build job executes when triggered.
-```shell
+    ```shell
     steps:
     - name: hashicorp/terraform:0.12.0
     args: ['init']
