@@ -326,7 +326,7 @@ You will use a custom [values file](https://github.com/kubernetes/helm/blob/mast
 
     ```
     export POD_NAME=$(kubectl get pods -l "app.kubernetes.io/component=jenkins-master" -o jsonpath="{.items[0].metadata.name}")
-    kubectl port-forward $POD_NAME 8080:8080 >> /dev/null &
+    kubectl port-forward $POD_NAME 9080:8080 >> /dev/null &
     ```
 
 1. Now, check that the Jenkins Service was created properly:
@@ -353,7 +353,7 @@ Additionally the `jenkins-ui` services is exposed using a ClusterIP so that it i
     printf $(kubectl get secret cd-jenkins -o jsonpath="{.data.jenkins-admin-password}" | base64 --decode);echo
     ```
 
-2. To get to the Jenkins user interface, click on the Web Preview button![](../docs/img/web-preview.png) in cloud shell, then click “Preview on port 8080”:
+2. To get to the Jenkins user interface, click on the Web Preview button![](../docs/img/web-preview.png) in cloud shell, then click “Preview on port 9080”:
 
 ![](docs/img/preview-8080.png)
 
@@ -374,7 +374,7 @@ You'll use a very simple sample application - `gceme` - as the basis for your CD
 
 ![](images/info_card.png)
 
-The binary supports two modes of operation, designed to mimic a microservice. In backend mode, `gceme` will listen on a port (8080 by default) and return GCE instance metadata as JSON, with content-type=application/json. In frontend mode, `gceme` will query a backend `gceme` service and render that JSON in the UI you saw above. It looks roughly like this:
+The binary supports two modes of operation, designed to mimic a microservice. In backend mode, `gceme` will listen on a port (9080 by default) and return GCE instance metadata as JSON, with content-type=application/json. In frontend mode, `gceme` will query a backend `gceme` service and render that JSON in the UI you saw above. It looks roughly like this:
 
 ```
 -----------      ------------      ~~~~~~~~~~~~        -----------

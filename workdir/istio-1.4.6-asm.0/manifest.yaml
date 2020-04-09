@@ -1,0 +1,12 @@
+asmctlversion: 0.2.0
+dependencies:
+  cni:
+    sha: 367576fc80c2e8d80f248f76edb26eb2b46afa4f
+  installer:
+    sha: ea1665efcfab71b87ca92b7738c7653c99833cab
+  istio:
+    sha: fbd2c36f25a029b5101e3b855cdaba4fb8569a7a
+  operator:
+    sha: aba969f90ac6c1a848c90785ccab59fd815047d8
+docker: gcr.io/gke-release/asm
+version: 1.4.6-asm.0

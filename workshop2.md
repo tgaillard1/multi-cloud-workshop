@@ -90,7 +90,7 @@ kubeconfig entry generated for spinnaker1
 ```
 export DECK_POD=$(kubectl get pods --namespace spinnaker -l "cluster=spin-deck" \
     -o jsonpath="{.items[0].metadata.name}")
-kubectl port-forward --namespace spinnaker $DECK_POD 9080:9000 >> /dev/null &
+kubectl port-forward --namespace spinnaker $DECK_POD 8080:9000 >> /dev/null &
 ```
 
 ### Set up deployment clusters
@@ -395,7 +395,9 @@ kubectl apply -f $BASE_DIR/config-management-${CLUSTER_NAME3}.yaml --context=${C
 nomos status to validate | grep ${CLUSTER_NAME3} --> SYNCED
 ```
 
-## Adding Anthos Service Mesh 
+### Adding Anthos Service Mesh
+
+Validate download and authorize Anthos Service Mesh
 
 ```
 curl --request POST \
@@ -406,9 +408,7 @@ https://meshconfig.googleapis.com/v1alpha1/projects/${PROJECT_ID}:initialize
 
 ```
 curl -Lo $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz
-```
 
-```
 curl -Lo $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz.1.sig https://storage.googleapis.com/gke-release/asm/istio-1.4.6-asm.0-linux.tar.gz.1.sig
 openssl dgst -verify - -signature $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz.1.sig $WORKDIR/istio-1.4.6-asm.0-linux.tar.gz <<'EOF'
 -----BEGIN PUBLIC KEY-----
@@ -418,22 +418,20 @@ wQfk16sxprI2gOJ2vFFggdq3ixF2h4qNBt0kI7ciDhgpwS8t+/960IsIgw==
 EOF
 ```
 
+Unpackage asm
 ```
 cd $WORKDIR/
-```
-
-```
 tar xzf istio-1.4.6-asm.0-linux.tar.gz
-```
 
-```
 cd $WORKDIR/istio-1.4.6-asm.0
 ```
 
+Set Path for asm
 ```
 export PATH=$PWD/bin:$PATH
 ```
 
+Initiate install of asm for Spinnaker cluster
 ```
 istioctl manifest apply --set profile=asm \
   --set values.global.trustDomain=${IDNS} \
@@ -443,8 +441,27 @@ istioctl manifest apply --set profile=asm \
   --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${GKE_CLUSTER}|${ZONE}"
 ```
 
+Validate Install
 ```
-istioctl manifest apply --set profile=asm \
+kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
+kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context=${CLUSTER_NAME2}
+```
+This should return:
+
+**deployment.extensions/istio-galley condition met**
+
+**deployment.extensions/istio-ingressgateway condition met**
+
+**deployment.extensions/istio-pilot condition met**
+
+**deployment.extensions/istio-sidecar-injector condition met**
+
+**deployment.extensions/promsd condition met**
+
+
+Initiate install of asm for Dev cluster
+```
+ istioctl manifest apply --set profile=asm \
   --set values.global.trustDomain=${IDNS} \
   --set values.global.sds.token.aud=${IDNS} \
   --set values.nodeagent.env.GKE_CLUSTER_URL="https://container.googleapis.com/v1/projects/${PROJECT_ID}/locations/${CLUSTER_ZONE2}/clusters/${CLUSTER_NAME2}" \
@@ -452,6 +469,12 @@ istioctl manifest apply --set profile=asm \
   --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME2}|${CLUSTER_ZONE2}"
 ```
 
+Validate Install
+```
+kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context=${CLUSTER_NAME2}
+```
+
+Initiate install of asm for Stage cluster
 ```
   istioctl manifest apply --set profile=asm \
   --set values.global.trustDomain=${IDNS} \
@@ -461,28 +484,24 @@ istioctl manifest apply --set profile=asm \
   --set values.global.proxy.env.GCP_METADATA="${PROJECT_ID}|${PROJECT_NUMBER}|${CLUSTER_NAME3}|${CLUSTER_ZONE3}"
 ```
 
+Validate Install
 ```
-kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
-kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context=${CLUSTER_NAME2}
 kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context=${CLUSTER_NAME3}
 ```
 
-```
-asmctl validate
-asmctl validate --with-testing-workloads
-```
-
+Change labels to ensure Istio/Envoy is deployed as sidecar
 ```
 kubectl label namespace default istio-injection=enabled --overwrite --context=gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
 kubectl label namespace default istio-injection=enabled --overwrite --context=${CLUSTER_NAME2}
 kubectl label namespace default istio-injection=enabled --overwrite --context=${CLUSTER_NAME3}
 ```
 
+## Add clusters to Spinnaker for deployments
+
+Add Dev cluster
 ```
 kubectx ${CLUSTER_NAME2}
-```
 
-```
 ~/cloudshell_open/spinnaker-for-gcp/scripts/manage/add_gke_account.sh
 ```
 
@@ -490,21 +509,18 @@ Enter your currnt context (use default)
 Enter your PROJECT_ID
 Enter Spinnaker account name (use default)
 
+Change context to Spinnaker cluster and add Dev
 ```
 kubectl config use-context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
-```
 
-```
 ~/cloudshell_open/spinnaker-for-gcp/scripts/manage/push_and_apply.sh
 ```
 
-switch back to stage context and repeat
+Add Stage cluster
 
 ```
 kubectx ${CLUSTER_NAME3}
-```
 
-```
 ~/cloudshell_open/spinnaker-for-gcp/scripts/manage/add_gke_account.sh
 ```
 
@@ -512,15 +528,14 @@ Enter your currnt context (use default)
 Enter your PROJECT_ID
 Enter Spinnaker account name (use default)
 
+Change context to Spinnaker cluster and add Stage
 ```
 kubectl config use-context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
-```
 
-```
 ~/cloudshell_open/spinnaker-for-gcp/scripts/manage/push_and_apply.sh
 ```
 
-
+*  Log into Spinnaker UI
 ```
 export DECK_POD=$(kubectl get pods --namespace spinnaker -l "cluster=spin-deck" \
     -o jsonpath="{.items[0].metadata.name}")
@@ -556,8 +571,128 @@ aws cloudformation deploy --stack-name spinnaker-managed-infrastructure-setup --
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+# Install and run sample application and pipelines
 
-Can use downloaded Ford Sample App $BASE_DIR/continuous-integration-on-kubernetes/sample-app
+## Introduction
+
+* A sample "hello world" Go application
+* A Cloud Build trigger to build an image from source
+* Sample Spinnaker pipelines to deploy the image and validate the application in a progression from staging environment to production
+
+To proceed, make sure the Spinnaker instance is reachable with port-forwarding or is exposed publicly.
+
+$BASE_DIR/multi-cloud-workshop/spinnaker-for-gcp/scripts/manage/connect_unsecured.sh
+
+Select the project containing your Spinnaker instance, then click **Start**, below.
+
+## Create application and pipelines
+
+Run this command to create the required resources:
+
+```bash
+~/cloudshell_open/spinnaker-for-gcp/samples/helloworldwebapp/create_app_and_pipelines.sh
+```
+
+### Resources created:
+
+The source code is hosted in a repository in [Cloud Source Repository](https://source.cloud.google.com/{{project-id}}/spinnaker-for-gcp-helloworldwebapp)
+in the same project as your Spinnaker cluster.
+
+This repository contains a few other items:
+
+* Kubernetes configs for the application
+
+  These are used to deploy the application and validate the service.
+
+* A [Cloud Build config](https://source.cloud.google.com/{{project-id}}/spinnaker-for-gcp-helloworldwebapp/+/master:cloudbuild.yaml)
+
+  This builds the image and copies the Kubernetes configs to the Spinnaker GCS bucket.
+
+* A [Cloud Build trigger](https://console.developers.google.com/cloud-build/triggers?project={{project-id}}) 
+
+  This executes the Cloud Build config when any source code or manifest files are changed under
+  src/** or config/** in the repository.
+
+Cloud Build creates an [image](https://gcr.io/{{project-id}}/spinnaker-for-gcp-helloworldwebapp)
+from source and tags that image with the short commit hash.
+
+The script also creates two Kubernetes namespaces...
+* **helloworldwebapp-staging**
+* **helloworldwebapp-prod**
+
+...and the **helloworldwebapp-service** service in each of those namespaces, in the [Spinnaker Kubernetes cluster](https://console.developers.google.com/kubernetes/discovery?project={{project-id}}).
+
+These services expose the Go application for staging and prod environments.
+
+This process creates two Spinnaker pipelines under the **helloworldwebapp** Spinnaker application:
+
+* **Deploy to Staging**
+
+  This triggers on a newly completed GCB build, and deploys the image to the
+  **helloworldwebapp-staging** namespace. It then runs a validation job to check the health status of the service.
+
+* **Deploy to Production**
+
+  This starts on a successful **Deploy to Staging** run and Blue/Green deploys 
+  the tested image to **helloworldwebapp-prod** namespace. It then runs the health validation job.
+ 
+  On success, the old replicaset is scaled down after a 5 minute wait period.
+
+  On failure, the old replicaset is re-enabled and the new replicaset is disabled. A Pub/Sub
+  notification of the failure is sent via the preconfigured Pub/Sub publisher.
+
+You can navigate to your Spinnaker UI to see these pipelines.
+
+## Start a new build
+
+To build and deploy an image, just change some [source code](https://source.cloud.google.com/{{project-id}}/spinnaker-for-gcp-helloworldwebapp/+/master:src/main.go)
+or [manifest files](https://source.cloud.google.com/{{project-id}}/spinnaker-for-gcp-helloworldwebapp/+/master:config/) and push the change to the master branch. 
+
+The repository is already cloned to your home directory. Make some changes to the source code...
+
+```bash
+cloudshell edit ~/{{project-id}}/spinnaker-for-gcp-helloworldwebapp/src/main.go
+```
+
+...and commit the changes:
+```bash
+cd ~/{{project-id}}/spinnaker-for-gcp-helloworldwebapp
+
+git commit -am "Cool new features"
+git push
+```
+
+The new commit triggers the chain of events...
+1. Cloud Build builds the image.
+2. The **Deploy to Staging** pipeline deploys the image to staging and validates it.
+3. The **Deploy to Production** pipeline promotes the image to production and validates it.
+
+Visit the Spinnaker UI to verify that the pipelines complete successfully.
+
+After the pipelines finish, the [**helloworldwebapp-services**](https://console.developers.google.com/kubernetes/discovery?project={{project-id}})
+hosting the Go application will now be up and healthy. Click on the **endpoints**
+for each service to see a "Hello World" page!
+
+### Clean-up
+
+Run this command to delete all the resources created above:
+
+```bash
+~/cloudshell_open/spinnaker-for-gcp/samples/helloworldwebapp/cleanup_app_and_pipelines.sh && cd ~/cloudshell_open/spinnaker-for-gcp
+```
+
+### Return to Spinnaker console
+
+Run this command to return to the management environment:
+
+```bash
+~/cloudshell_open/spinnaker-for-gcp/scripts/manage/update_console.sh
+```
+
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Can use downloaded Sample App $BASE_DIR/continuous-integration-on-kubernetes/sample-app
 ++++++++++++
 
 In Cloud Shell, download and unpack the sample source code:
