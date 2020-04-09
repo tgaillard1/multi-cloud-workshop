@@ -448,8 +448,8 @@ Validate Install
 kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context gke_${PROJECT_ID}_${ZONE}_${GKE_CLUSTER}
 kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context=${CLUSTER_NAME2}
 ```
-This should return:
-    ```shell
+This should return:  
+    ```
     **deployment.extensions/istio-galley condition met**  
     **deployment.extensions/istio-ingressgateway condition met**  
     **deployment.extensions/istio-pilot condition met**  
