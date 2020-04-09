@@ -1,41 +1,81 @@
-******************************************************
 ## Workshop 3 -- AI/ML Recommendation Engine
 
 ![Workshop Screenshot](images/workshop3-arch.png?raw=true "Workshop 3 Diagram")
 
 ### Prerequisites
-------
-1. A Google Cloud Platform Account
-1. [Enable the Cloud Build and Cloud Source Repositories APIs](https://console.cloud.google.com/flows/enableapi?apiid=container,cloudbuild.googleapis.com,sourcerepo.googleapis.com&redirect=https://console.cloud.google.com&_ga=2.48886959.843635228.1580750081-768538728.1545413763)
+*  A Google Cloud Platform Account
+*  A Git Hub Account
+*  Two projects are needed for this workshop
 
-Set Project
-```
-gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID 
-```
+**NOTE** -- Skip the next step if you have already download the source code from the first workshop (1).
 
-Get source code
-```
-git clone https://github.com/tgaillard1/multi-cloud-workshop.git
-cd ~/multi-cloud-workshop
-source ./env
-```
+*  Get workshop source code
+    ```shell
+    git clone https://github.com/tgaillard1/multi-cloud-workshop.git
+    cd ~/multi-cloud-workshop
+    source ./env
+    ```
 
-Enable API's
+### Set up environment
 
-```
-gcloud services enable \
-    container.googleapis.com \
-    compute.googleapis.com \
-    stackdriver.googleapis.com \
-    meshca.googleapis.com \
-    meshtelemetry.googleapis.com \
-    meshconfig.googleapis.com \
-    iamcredentials.googleapis.com \
-    anthos.googleapis.com
-```
+*  Create a new project for your builds on GCP:
++  Name should indicate build, e.g., "tg-build"
++  Enter your build project ID below in your shell
+
+*  Set Build Project ID
+    ```shell
+    gcloud config set project REPLACE_WITH_YOUR_**BUILD**_PROJECT_ID
+    ```
+*  Enable API's
+    ```shell
+    gcloud services enable \
+        container.googleapis.com \
+        compute.googleapis.com \
+        stackdriver.googleapis.com \
+        meshca.googleapis.com \
+        meshtelemetry.googleapis.com \
+        meshconfig.googleapis.com \
+        iamcredentials.googleapis.com \
+        sourcerepo.googleapis.com \
+        redis.googleapis.com \
+        anthos.googleapis.com \
+        run.googleapis.com \
+        firestore.googleapis.com \
+        pubsub.googleapis.com \
+        cloudscheduler.googleapis.com \
+        cloudresourcemanager.googleapis.com
+    ```
+    
+*  Set environment variables
+    ```shell
+    cd ~/multi-cloud-workshop
+    source ./env
+    ```
+
+*  Set additional **Build** project variables
+    ```shell
+    export BUILD_PROJECT_ID=${DEVSHELL_PROJECT_ID}
+    gcloud config set compute/zone ${CLUSTER_ZONE1} --project ${BUILD_PROJECT_ID}
+    gcloud config set project ${BUILD_PROJECT_ID}
+    export BUILD_PROJECT_NUMBER=$(gcloud projects describe $DEVSHELL_PROJECT_ID --format='value(projectNumber)')
+    ```
+
+A second project is needed for your deployments.  If you have completed Workshop 1 or 2 you can use that project for these deployments.
+*  Set **Deployment** project variables
+    ```shell
+    export TEST_PROJECT_ID=REPLACE_WITH_YOUR_DEPLOYMENT_PROJECT_ID
+    gcloud config set compute/zone ${CLUSTER_ZONE3} --project ${TEST_PROJECT_ID}
+    ```
 
 ### Install Terraform IAC
 
+*  Set environment
+    ```shell
+    cd ~/multi-cloud-workshop
+    source ./env
+    ```
+
+*  Create bucket for  
 ```
 gsutil mb -p ${BUILD_PROJECT_ID} -l us-central1 \
  gs://recommender-tf-state-$BUILD_PROJECT_ID

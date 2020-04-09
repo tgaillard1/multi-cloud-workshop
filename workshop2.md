@@ -36,7 +36,7 @@ gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID
 
 ### Create Spinnaker and Cluster
 
-*  Set environment
+*  Set environment variables
     ```shell
     cd ~/multi-cloud-workshop
     source ./env
@@ -449,6 +449,7 @@ kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-
 kubectl wait --for=condition=available --timeout=600s deployment --all -n istio-system --context=${CLUSTER_NAME2}
 ```
 + This should return:  
+
     **deployment.extensions/istio-galley condition met**  
     **deployment.extensions/istio-ingressgateway condition met**  
     **deployment.extensions/istio-pilot condition met**  
@@ -686,3 +687,9 @@ Run this command to return to the management environment:
 ~/cloudshell_open/spinnaker-for-gcp/scripts/manage/update_console.sh
 ```
 
+## Next Steps
+Proceed to Workshop 3 or return to homepage:
+
++ [Workshop 3](https://github.com/tgaillard1/multi-cloud-workshop/blob/master/workshop3.md "Workshop 3")
+
++ [Home Page](https://github.com/tgaillard1/multi-cloud-workshop "Home Page")
