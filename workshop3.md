@@ -121,10 +121,7 @@ Copy Repo URL link and enter below
 
 *  Add deployment key to GIT repo
     ```shell
-    ssh-keygen -t rsa -b 4096 \
-    -C "your_github_email@example.com" \
-    -N '' \
-    -f ${HOME}/.ssh/iac-source-key
+    ssh-keygen -t rsa -b 4096 -C "your_github_email@example.com"
     ```
 
 Go to Git --> Repo --> iac-source-repo --> settings --> Deploy keys --> Add deploy key
@@ -133,7 +130,7 @@ Go to Git --> Repo --> iac-source-repo --> settings --> Deploy keys --> Add depl
 
 --> Copy contents of public key from command below to **Key** location:
     ```shell
-    cat ${HOME}/.ssh/iac-source-key.pub
+    cat ${HOME}/.ssh/id_rsa.pub
     ```
 
 --> Allow write access to GitHub
@@ -154,7 +151,7 @@ Create the known_hosts file for GitHub. In your Cloud Shell session, run the com
     ```shell
     gsutil mb -p ${BUILD_PROJECT_ID} -l us-central1 gs://github-keys-$BUILD_PROJECT_ID
 
-    gsutil cp ~/.ssh/iac-source-key* gs://github-keys-$BUILD_PROJECT_ID
+    gsutil cp ~/.ssh/id_rsa* gs://github-keys-$BUILD_PROJECT_ID
     gsutil cp ~/.ssh/known_hosts gs://github-keys-$BUILD_PROJECT_ID
     ```
 
