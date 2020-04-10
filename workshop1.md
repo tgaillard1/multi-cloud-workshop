@@ -1,6 +1,6 @@
 #   Workshop 1 -- Continuous Integration -- Jenkins 
 
-<img src="https://github.com/tgaillard1/multi-cloud-workshop/blob/master/images/jenkins-ci-arch.png" alt="Workshop 1 Diagram" width="1200" height="400"/>
+<img src="https://github.com/tgaillard1/multi-cloud-workshop/blob/master/images/jenkins-ci-arch.png" alt="Workshop 1 Diagram" width="1500" height="400"/>
 
 ## Prerequisites
 *  A Google Cloud Platform Account
