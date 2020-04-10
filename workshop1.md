@@ -1,6 +1,6 @@
 #   Workshop 1 -- Continuous Integration -- Jenkins 
 
-![Workshop 1 Screenshot](images/jenkins-ci-arch.png?raw=true "Workshop 1 Diagram" width="200" height="400")
+![Workshop 1 Screenshot]<img src="images/jenkins-ci-arch.png?raw=true" "Workshop 1 Diagram" width="200" height="400"/>
 
 ## Prerequisites
 *  A Google Cloud Platform Account
