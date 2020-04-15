@@ -39,7 +39,7 @@ source ./env
 Deploy Cluster
 ```
 gcloud beta container clusters create ${CLUSTER_NAME1} \
-    --machine-type=${NODE_SIZE} \
+    --machine-type=${NODE_SIZE1} \
     --num-nodes=${NODE_COUNT} \
     --identity-namespace=${IDNS} \
     --enable-stackdriver-kubernetes \
@@ -448,11 +448,6 @@ Here you'll create your own copy of the `gceme` sample app in [Cloud Source Repo
     gcloud source repos create gceme
     git remote add origin https://source.developers.google.com/p/${PROJECT_ID}/r/gceme
     ```
-    cd $BASE_DIR/continuous-integration-on-kubernetes/sample-app
-    git init
-    git config credential.helper
-    git remote add origin https://github.com/tgaillard1/gceme.git
-
 
 1. Ensure git is able to identify you:
 
@@ -499,8 +494,19 @@ To see sample code go to --> https://source.cloud.google.com/${PROJECT_ID}/gceme
 ## Create a pipeline
 You'll now use Jenkins to define and run a pipeline that will test, build, and deploy your copy of `gceme` to your Kubernetes cluster. You'll approach this in phases. Let's get started with the first.
 
-### Phase 1: Add your service account credentials
+### Phase 1: Add your service account credentials (Example below for Git Hub)
 First we will need to configure our GCP credentials in order for Jenkins to be able to access our code repository
+
+1. In the Jenkins UI, Click “Credentials” on the left
+1. Click either of the “(global)” links (they both route to the same URL)
+1. Click “Add Credentials” on the left
+1. From the “Kind” dropdown, select “Username with password”
+1. Scope = Global (Jenkins, nodes, items, all child items, etc)
+1. Username = YOUR_GIT_USER
+1. Password = YOUR_GIT_PASSWORD
+1. Click “OK”
+
+If you are using Google Source Repositor follow the steps below:
 
 1. In the Jenkins UI, Click “Credentials” on the left
 1. Click either of the “(global)” links (they both route to the same URL)
@@ -509,8 +515,6 @@ First we will need to configure our GCP credentials in order for Jenkins to be a
 1. Click “OK”
 
 You should now see 2 Global Credentials. Make a note of the name of second credentials as you will reference this in Phase 2:
-
-![](docs/img/jenkins-credentials.png)
 
 
 ### Phase 2: Create a job
@@ -526,10 +530,11 @@ Navigate to your Jenkins UI and follow these steps to configure a Pipeline job (
 
 1. Click `Add Source` and choose `git`
 
-1. Paste the **HTTPS clone URL** of your `sample-app` repo on Cloud Source Repositories into the **Project Repository** field.
-    It will look like: https://source.developers.google.com/p/REPLACE_WITH_YOUR_PROJECT_ID/r/gceme
+1. Paste the **HTTPS clone URL** of your `sample-app` repo on Git or Cloud Source Repositories into the **Project Repository** field.
+    It will look like this for Git: https://github.com/${ACCOUNT}/${APP_REPO}.git and this for GCR:
+    https://source.developers.google.com/p/REPLACE_WITH_YOUR_PROJECT_ID/r/gceme
 
-1. From the Credentials dropdown select the name of new created credentials from the Phase 1. It should have the format `PROJECT_ID service account`.
+1. From the Credentials dropdown select the name of new created credentials from the Phase 1. It should have the username of your Git Hub or the format `PROJECT_ID service account` for GCR.
 
 1. Under 'Scan Multibranch Pipeline Triggers' section, check the 'Periodically if not otherwise run' box and se the 'Interval' value to 1 minute.
 
