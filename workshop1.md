@@ -149,7 +149,7 @@ kubectl create clusterrolebinding cluster-admin-binding \
 
 Obtain and deploy operator for Jenkins
 ```
-gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml $BASE_DIR/continuous-integration-on-kubernetes/config-management-operator.yaml
+gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml $BASE_DIR/config-management-operator.yaml
 ```
 
 Apply operator to cluster
