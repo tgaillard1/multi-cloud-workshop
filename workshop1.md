@@ -21,6 +21,7 @@ gcloud services enable \
     meshconfig.googleapis.com \
     iamcredentials.googleapis.com \
     sourcerepo.googleapis.com \
+    cloudbuild.googleapis.com \
     anthos.googleapis.com
 ```
 
@@ -40,7 +41,7 @@ Deploy Cluster
 ```
 gcloud beta container clusters create ${CLUSTER_NAME1} \
     --machine-type=${NODE_SIZE1} \
-    --num-nodes=${NODE_COUNT} \
+    --num-nodes=${NODE_COUNT1} \
     --identity-namespace=${IDNS} \
     --enable-stackdriver-kubernetes \
     --subnetwork=default \
@@ -149,7 +150,7 @@ kubectl create clusterrolebinding cluster-admin-binding \
 
 Obtain and deploy operator for Jenkins
 ```
-gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml $BASE_DIR/config-management-operator.yaml
+gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml config-management-operator.yaml
 ```
 
 Apply operator to cluster
@@ -257,12 +258,6 @@ This should return:
 
 **deployment.extensions/promsd condition met**
 
-
-Change labels to ensure Istio/Envoy is deployed as sidecar
-````
-kubectl label namespace default istio-injection=enabled --overwrite
-````
-
 ------
 ### Install Helm
 
@@ -322,7 +317,40 @@ You will use a custom [values file](https://github.com/kubernetes/helm/blob/mast
     clusterrolebinding.rbac.authorization.k8s.io/jenkins-deploy created
     ```
 
-1. Run the following command to setup port forwarding to the Jenkins UI from the Cloud Shell
+1. Configure service account to be able to deploy pipelines.
+
+    ```
+    gcloud iam service-accounts create jenkins-pipelines \
+    --description="jenkins-pipelines" \
+    --display-name="jenkins-pipelines" \
+    --project $PROJECT_ID
+    ```
+
+    ```
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:jenkins-pipelines@${PROJECT_ID}.iam.gserviceaccount.com \
+    --role roles/viewer
+
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:jenkins-pipelines@${PROJECT_ID}.iam.gserviceaccount.com \
+    --role roles/cloudbuild.builds.editor
+
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:jenkins-pipelines@${PROJECT_ID}.iam.gserviceaccount.com \
+    --role roles/container.developer
+
+    gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:jenkins-pipelines@${PROJECT_ID}.iam.gserviceaccount.com \
+    --role roles/storage.objectCreator 
+    ```
+
+Download SA for Jenkins pipelines.  This will be used in your Jenkins setup if you do the optional section below.
+    ```
+    gcloud iam service-accounts keys create $WORKDIR/jenkins-pipelines.json \
+    --iam-account jenkins-pipelines@${PROJECT_ID}.iam.gserviceaccount.com
+    ```
+
+1. Run the following command to setup port forwarding to the Jenkins UI from the Cloud Shell.
 
     ```
     export POD_NAME=$(kubectl get pods -l "app.kubernetes.io/component=jenkins-master" -o jsonpath="{.items[0].metadata.name}")
@@ -413,9 +441,14 @@ export ACCOUNT=YOUR_GIT_USER
 export APP_REPO_URL=https://github.com/${ACCOUNT}/${APP_REPO}.git
 ```
 
-1. Change directories to `sample-app` of the repo you cloned previously, then initialize the git repository.
+1. Change directories to `sample-app` of the repo you cloned previously, then change Jenkinsfile and initialize the git repository.
 
-   **Be sure to replace _REPLACE_WITH_YOUR_PROJECT_ID_ with the name of your Google Cloud Platform project**
+    ```shell
+    cd $BASE_DIR/continuous-integration-on-kubernetes/sample-app
+
+    cat $BASE_DIR/continuous-integration-on-kubernetes/sample-app/Jenkinsfile | \
+    sed -i "s/PROJECT_ID/${PROJECT_ID}/g;s/CLUSTER_NAME1/${CLUSTER_NAME1}/g;s/CLUSTER_ZONE1/${CLUSTER_ZONE1}/g;s/SA_CRED/${SA_CRED}/g" $BASE_DIR/continuous-integration-on-kubernetes/sample-app/Jenkinsfile
+    ```
 
 1. Initialize for Git Push
     ```shell
@@ -437,12 +470,16 @@ To see sample code go to --> https://github.com/${ACCOUNT}/${APP_REPO}.git
 ### (Option 2 -- Google Source Repository) Create a repository for the sample app
 Here you'll create your own copy of the `gceme` sample app in [Cloud Source Repository](https://cloud.google.com/source-repositories/docs/).
 
-1. Change directories to `sample-app` of the repo you cloned previously, then initialize the git repository.
-
-   **Be sure to replace _REPLACE_WITH_YOUR_PROJECT_ID_ with the name of your Google Cloud Platform project**
+1. Change directories to `sample-app` of the repo you cloned previously, then change Jenkinsfile and initialize the git repository.
 
     ```shell
     cd $BASE_DIR/continuous-integration-on-kubernetes/sample-app
+
+    cat $BASE_DIR/continuous-integration-on-kubernetes/sample-app/Jenkinsfile | \
+    sed -i "s/PROJECT_ID/${PROJECT_ID}/g;s/CLUSTER_NAME1/${CLUSTER_NAME1}/g;s/CLUSTER_ZONE1/${CLUSTER_ZONE1}/g;s/SA_CRED/${SA_CRED}/g" $BASE_DIR/continuous-integration-on-kubernetes/sample-app/Jenkinsfile
+    ```
+
+    ```
     git init
     git config credential.helper gcloud.sh
     gcloud source repos create gceme
@@ -456,7 +493,6 @@ Here you'll create your own copy of the `gceme` sample app in [Cloud Source Repo
     git config --global user.email "$EMAIL"
     git config --global user.name "$USER"
     ```
-
 
 1. Add, commit, and push all the files:
 
@@ -511,7 +547,15 @@ If you are using Google Source Repositor follow the steps below:
 1. In the Jenkins UI, Click “Credentials” on the left
 1. Click either of the “(global)” links (they both route to the same URL)
 1. Click “Add Credentials” on the left
-1. From the “Kind” dropdown, select “Google Service Account from metadata”
+1. From the “Kind” dropdown, select “Secret key”
+1. Upload the Service Account key you created earlier --> jenkins-pipelines
+1. Click “OK”
+
+1. In the Jenkins UI, Click “Credentials” on the left
+1. Click either of the “(global)” links (they both route to the same URL)
+1. Click “Add Credentials” on the left
+1. From the “Kind” dropdown, select “Google Service Account from private key"
+1. Upload the Service Account key you created earlier --> jenkins-pipelines
 1. Click “OK”
 
 You should now see 2 Global Credentials. Make a note of the name of second credentials as you will reference this in Phase 2:
@@ -534,7 +578,7 @@ Navigate to your Jenkins UI and follow these steps to configure a Pipeline job (
     It will look like this for Git: https://github.com/${ACCOUNT}/${APP_REPO}.git and this for GCR:
     https://source.developers.google.com/p/REPLACE_WITH_YOUR_PROJECT_ID/r/gceme
 
-1. From the Credentials dropdown select the name of new created credentials from the Phase 1. It should have the username of your Git Hub or the format `PROJECT_ID service account` for GCR.
+1. From the Credentials dropdown select the name of the “Google Service Account from private key" or your "Git user/pass" from the Phase 1. It should have the username of your Git Hub or the format `PROJECT_ID service account` for GCR.
 
 1. Under 'Scan Multibranch Pipeline Triggers' section, check the 'Periodically if not otherwise run' box and se the 'Interval' value to 1 minute.
 
