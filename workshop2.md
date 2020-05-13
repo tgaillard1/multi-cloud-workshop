@@ -25,7 +25,7 @@ gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID
         anthos.googleapis.com
     ```
 
-**NOTE** -- Skip the next step if you have already download the source code from the first workshop (1).
+**NOTE** -- Skip the next step if you have already downloaded the source code workshop (1) or workshop (3).
 
 *  Get workshop source code
     ```shell
@@ -200,6 +200,17 @@ sudo chmod +x $WORKDIR/kustomize
 sudo cp $WORKDIR/kustomize /usr/local/bin/kustomize
 ```
 
+Mac Users can use the following:
+```
+cd $WORKDIR/
+
+curl -s "https://raw.githubusercontent.com/\
+kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
+
+sudo chmod +x $WORKDIR/kustomize
+sudo cp $WORKDIR/kustomize /usr/local/bin/kustomize
+```
+
 ## Note -- Skip this step if you have completed it in workshop (1 or 3)
 Proceed to --> **Git Hub Configured -- Add Variables and Credentials** below
 
@@ -222,9 +233,8 @@ export REPO_URL=https://github.com/${ACCOUNT}/${REPO}.git
 
 *  Initialize for Git Push
 ```
-cd $HOME
-cp -rf $BASE_DIR/config-mgmt-repo/ .
-cd ~/anthos-config-mgmt
+cd $BASE_DIR/config-mgmt-repo/
+
 git init
 git config credential.helper
 git remote add origin $REPO_URL
