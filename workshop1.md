@@ -324,8 +324,6 @@ You will use a custom [values file](https://github.com/kubernetes/helm/blob/mast
 
     ```
     kubectl create clusterrolebinding jenkins-deploy --clusterrole=cluster-admin --serviceaccount=default:cd-jenkins
-
-    clusterrolebinding.rbac.authorization.k8s.io/jenkins-deploy created
     ```
 
 1. Configure service account to be able to deploy pipelines.
