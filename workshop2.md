@@ -200,7 +200,7 @@ sudo chmod +x $WORKDIR/kustomize
 sudo cp $WORKDIR/kustomize /usr/local/bin/kustomize
 ```
 
-## Note -- Skip this step if you have completed it in workshop (1,3)
+## Note -- Skip this step if you have completed it in workshop (1 or 3)
 Proceed to --> **Git Hub Configured -- Add Variables and Credentials** below
 
 ### Create Git Hub Config Management Repo
