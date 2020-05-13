@@ -384,7 +384,7 @@ Additionally the `jenkins-ui` services is exposed using a ClusterIP so that it i
 
 2. To get to the Jenkins user interface, click on the Web Preview button in cloud shell, then click “Preview on port 9080”:
 
-<img src="https://github.com/tgaillard1/multi-cloud-workshop/blob/master/images/web-preview.png" alt="Web Preview"/>
+<img src="https://github.com/tgaillard1/multi-cloud-workshop/blob/master/images/web-preview1.png" alt="Web Preview"/>
 
 You should now be able to log in with username `admin` and your auto generated password.
 
