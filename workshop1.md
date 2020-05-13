@@ -533,8 +533,9 @@ You'll now use Jenkins to define and run a pipeline that will test, build, and d
 ### Phase 1: Add your service account credentials 
 
 #### Git Hub Option
-First we will need to configure our GCP credentials in order for Jenkins to be able to access our code repository
+First we will need to configure our GCP credentials in order for Jenkins to be able to access our code repository and container registry
 
+First Credentials -- Source Reository
 1. In the Jenkins UI, Click “Credentials” on the left
 1. Click either of the “(global)” links (they both route to the same URL)
 1. Click “Add Credentials” on the left
@@ -544,6 +545,7 @@ First we will need to configure our GCP credentials in order for Jenkins to be a
 1. Password = YOUR_GIT_PASSWORD
 1. Click “OK”
 
+Second Credentials -- Import to Google Container Registry
 1. In the Jenkins UI, Click “Credentials” on the left
 1. Click either of the “(global)” links (they both route to the same URL)
 1. Click “Add Credentials” on the left
@@ -556,6 +558,7 @@ Make a note of the name of second credentials as you will reference this in Phas
 
 #### Google Sourec Repository Option
 
+First Credentials -- Source Reository
 1. In the Jenkins UI, Click “Credentials” on the left
 1. Click either of the “(global)” links (they both route to the same URL)
 1. Click “Add Credentials” on the left
@@ -563,6 +566,7 @@ Make a note of the name of second credentials as you will reference this in Phas
 1. Upload the Service Account key you created earlier --> jenkins-pipelines
 1. Click “OK”
 
+Second Credentials -- Import to Google Container Registry
 1. In the Jenkins UI, Click “Credentials” on the left
 1. Click either of the “(global)” links (they both route to the same URL)
 1. Click “Add Credentials” on the left
