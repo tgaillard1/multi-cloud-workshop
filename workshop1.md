@@ -110,9 +110,8 @@ export REPO_URL=https://github.com/${ACCOUNT}/${REPO}.git
 
 Initialize for Git Push
 ```
-cd $HOME
-cp -rf $BASE_DIR/config-mgmt-repo/ .
-cd ~/config-mgmt-repo
+cd $BASE_DIR/config-mgmt-repo/
+
 git init
 git config credential.helper
 git remote add origin $REPO_URL
