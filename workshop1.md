@@ -443,7 +443,7 @@ Login to your Git Hub account --> got to repositories --> select "New" --> Enter
 
 Copy Repo URL link and enter below
 
-Create Input Variable for Config Management
+Create Input Variable for Gceme Application Repo
 ```shell
 export APP_REPO="gceme"
 export ACCOUNT=YOUR_GIT_USER
