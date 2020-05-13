@@ -388,7 +388,6 @@ Additionally the `jenkins-ui` services is exposed using a ClusterIP so that it i
 
 You should now be able to log in with username `admin` and your auto generated password.
 
-![](docs/img/jenkins-login.png)
 
 ### Your progress, and what's next (Optional if you want to deploy an application)
 You've got a Kubernetes cluster managed by Google Container Engine. You've deployed:
@@ -403,7 +402,7 @@ You'll use a very simple sample application - `gceme` - as the basis for your CD
 
 ![](images/info_card.png)
 
-The binary supports two modes of operation, designed to mimic a microservice. In backend mode, `gceme` will listen on a port (9080 by default) and return GCE instance metadata as JSON, with content-type=application/json. In frontend mode, `gceme` will query a backend `gceme` service and render that JSON in the UI you saw above. It looks roughly like this:
+The binary supports two modes of operation, designed to mimic a microservice. In backend mode, `gceme` will listen on a port (8080 by default) and return GCE instance metadata as JSON, with content-type=application/json. In frontend mode, `gceme` will query a backend `gceme` service and render that JSON in the UI you saw above. It looks roughly like this:
 
 ```
 -----------      ------------      ~~~~~~~~~~~~        -----------
@@ -431,7 +430,7 @@ Here you'll create your own copy of the `gceme` sample app in a Git Hub Reposito
 Login to your Git Hub account --> got to repositories --> select "New" --> Enter variables below:
 + Repository Name = gceme
 + Description = Sample app for Jenkins on multi-cloud
-+ --> Creat Repository
++ --> Create Repository
 
 Copy Repo URL link and enter below
 
@@ -531,7 +530,9 @@ To see sample code go to --> https://source.cloud.google.com/${PROJECT_ID}/gceme
 ## Create a pipeline
 You'll now use Jenkins to define and run a pipeline that will test, build, and deploy your copy of `gceme` to your Kubernetes cluster. You'll approach this in phases. Let's get started with the first.
 
-### Phase 1: Add your service account credentials (Example below for Git Hub)
+### Phase 1: Add your service account credentials 
+
+#### Git Hub Option
 First we will need to configure our GCP credentials in order for Jenkins to be able to access our code repository
 
 1. In the Jenkins UI, Click “Credentials” on the left
@@ -543,7 +544,17 @@ First we will need to configure our GCP credentials in order for Jenkins to be a
 1. Password = YOUR_GIT_PASSWORD
 1. Click “OK”
 
-If you are using Google Source Repositor follow the steps below:
+1. In the Jenkins UI, Click “Credentials” on the left
+1. Click either of the “(global)” links (they both route to the same URL)
+1. Click “Add Credentials” on the left
+1. From the “Kind” dropdown, select “Secret key”
+1. Upload the Service Account key you created earlier --> jenkins-pipelines
+1. Click “OK”
+
+You should now see 2 Global Credentials.  
+Make a note of the name of second credentials as you will reference this in Phase 2:
+
+#### Google Sourec Repository Option
 
 1. In the Jenkins UI, Click “Credentials” on the left
 1. Click either of the “(global)” links (they both route to the same URL)
@@ -559,8 +570,8 @@ If you are using Google Source Repositor follow the steps below:
 1. Upload the Service Account key you created earlier --> jenkins-pipelines
 1. Click “OK”
 
-You should now see 2 Global Credentials. Make a note of the name of second credentials as you will reference this in Phase 2:
-
+You should now see 2 Global Credentials.  
+Make a note of the name of second credentials as you will reference this in Phase 2:
 
 ### Phase 2: Create a job
 This lab uses [Jenkins Pipeline](https://jenkins.io/solutions/pipeline/) to define builds as groovy scripts.
