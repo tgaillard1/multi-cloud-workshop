@@ -344,7 +344,8 @@ You will use a custom [values file](https://github.com/kubernetes/helm/blob/mast
     --role roles/storage.objectCreator 
     ```
 
-Download SA for Jenkins pipelines.  This will be used in your Jenkins setup if you do the optional section below.
+1. Download SA for Jenkins pipelines.  This will be used in your Jenkins setup if you do the optional section below.
+
     ```
     gcloud iam service-accounts keys create $WORKDIR/jenkins-pipelines.json \
     --iam-account jenkins-pipelines@${PROJECT_ID}.iam.gserviceaccount.com
@@ -381,9 +382,9 @@ Additionally the `jenkins-ui` services is exposed using a ClusterIP so that it i
     printf $(kubectl get secret cd-jenkins -o jsonpath="{.data.jenkins-admin-password}" | base64 --decode);echo
     ```
 
-2. To get to the Jenkins user interface, click on the Web Preview button![](../docs/img/web-preview.png) in cloud shell, then click “Preview on port 9080”:
+2. To get to the Jenkins user interface, click on the Web Preview button in cloud shell, then click “Preview on port 9080”:
 
-![](docs/img/preview-8080.png)
+<img src="https://github.com/tgaillard1/multi-cloud-workshop/blob/master/images/web-preview.png" alt="Web Preview"/>
 
 You should now be able to log in with username `admin` and your auto generated password.
 
