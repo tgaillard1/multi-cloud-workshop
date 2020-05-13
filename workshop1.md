@@ -2,10 +2,10 @@
 
 <img src="https://github.com/tgaillard1/multi-cloud-workshop/blob/master/images/jenkins-ci-arch.png" alt="Workshop 1 Diagram" width="1500" height="400"/>
 
-## Prerequisites
+## Prerequisites (Note: Instructions are best run on GCP Cloud Shell or Linux OS)
 *  A Google Cloud Platform Account
 *  A Git Hub Account
-*  Set Project
+*  GCP Project
 ```
 gcloud config set project REPLACE_WITH_YOUR_PROJECT_ID 
 ```
@@ -67,7 +67,7 @@ chmod +x $WORKDIR/nomos
 sudo cp $WORKDIR/nomos /usr/local/bin/nomos
 ```
 
-Intall Kustomize
+Intall Kustomize (Command explicit for Linux OS)
 ```
 opsys=linux
 curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |\
@@ -75,6 +75,17 @@ curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest |
   grep $opsys |\
   cut -d '"' -f 4 |\
   xargs curl -L -o $WORKDIR/kustomize
+
+sudo chmod +x $WORKDIR/kustomize
+sudo cp $WORKDIR/kustomize /usr/local/bin/kustomize
+```
+
+Mac Users can use the following:
+```
+cd $WORKDIR/
+
+curl -s "https://raw.githubusercontent.com/\
+kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash
 
 sudo chmod +x $WORKDIR/kustomize
 sudo cp $WORKDIR/kustomize /usr/local/bin/kustomize
