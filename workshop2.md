@@ -542,7 +542,7 @@ kubectl port-forward --namespace spinnaker $DECK_POD 8080:9000 >> /dev/null &
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-## Install AWS Managed account --- TBD
+## Install AWS Managed account --- Work-in-Progress
 
 Install AWS CLI
 
