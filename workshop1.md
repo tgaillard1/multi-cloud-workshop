@@ -158,7 +158,7 @@ kubectl create clusterrolebinding cluster-admin-binding \
   --user="$(gcloud config get-value core/account)"
 ```
 
-Obtain and deploy operator for Jenkins
+Obtain and deploy operator for Config Mgmt
 ```
 gsutil cp gs://config-management-release/released/latest/config-management-operator.yaml config-management-operator.yaml
 ```
